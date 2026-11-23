@@ -16,6 +16,14 @@ enum TransactionType {
   EXPENSE
 }
 
+/// Type de compte / portefeuille.
+enum AccountType {
+  CASH         // Espèces
+  MOBILE_MONEY // Wave, Orange Money, MoMo…
+  BANK         // Compte bancaire
+  OTHER        // Autre
+}
+
 /// Un utilisateur. Chaque utilisateur ne voit QUE ses propres données.
 model User {
   id           String     @id @default(cuid())
@@ -29,6 +37,24 @@ model User {
   categories   Category[]
   transactions Transaction[]
   budgets      Budget[]
+  accounts     Account[]
+}
+
+/// Un compte / portefeuille (Espèces, Mobile Money, Banque…) avec son solde.
+model Account {
+  id                  String      @id @default(cuid())
+  name                String
+  type                AccountType @default(CASH)
+  color               String      @default("#6d28d9") // couleur d'affichage
+  initialBalanceCents Int         @default(0)         // solde de départ (centimes)
+  userId              String
+  createdAt           DateTime    @default(now())
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@unique([userId, name])
+  @@index([userId])
 }
 
 /// Catégorie, personnalisable par utilisateur (utilisée par les dépenses).
@@ -57,14 +83,17 @@ model Transaction {
   date        DateTime        @default(now())
   userId      String
   categoryId  String?
+  accountId   String?
   createdAt   DateTime        @default(now())
 
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   category    Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  account     Account?  @relation(fields: [accountId], references: [id], onDelete: SetNull)
 
   @@index([userId, date])
   @@index([userId, type])
   @@index([categoryId])
+  @@index([accountId])
 }
 
 /// Budget mensuel optionnel pour une catégorie (plafond de dépenses).
