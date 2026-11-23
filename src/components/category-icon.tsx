@@ -17,6 +17,8 @@ import {
   GraduationCap,
   Fuel,
   PiggyBank,
+  Banknote,
+  Landmark,
   type LucideIcon,
 } from "lucide-react";
 
@@ -40,6 +42,8 @@ const ICONS: Record<string, LucideIcon> = {
   "graduation-cap": GraduationCap,
   fuel: Fuel,
   "piggy-bank": PiggyBank,
+  banknote: Banknote,
+  landmark: Landmark,
 };
 
 export function getCategoryIcon(name?: string | null): LucideIcon {

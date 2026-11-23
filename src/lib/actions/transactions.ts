@@ -19,6 +19,7 @@ function revalidateAll() {
   revalidatePath("/operations");
   revalidatePath("/statistiques");
   revalidatePath("/budgets");
+  revalidatePath("/comptes");
 }
 
 const transactionInput = z.object({
@@ -27,6 +28,7 @@ const transactionInput = z.object({
   note: z.string().trim().max(200).optional(),
   date: z.string().optional(),
   categoryId: z.string().optional(),
+  accountId: z.string().optional(),
 });
 
 /** Valide la catégorie et retourne son id si elle appartient à l'utilisateur. */
@@ -42,6 +44,19 @@ async function resolveCategoryId(
     select: { id: true },
   });
   return cat?.id ?? null;
+}
+
+/** Valide le compte et retourne son id s'il appartient à l'utilisateur. */
+async function resolveAccountId(
+  userId: string,
+  accountId: string | undefined,
+): Promise<string | null> {
+  if (!accountId) return null;
+  const acc = await prisma.account.findFirst({
+    where: { id: accountId, userId },
+    select: { id: true },
+  });
+  return acc?.id ?? null;
 }
 
 export async function createTransaction(
@@ -71,6 +86,7 @@ export async function createTransaction(
     parsed.data.categoryId,
     parsed.data.type,
   );
+  const accountId = await resolveAccountId(userId, parsed.data.accountId);
 
   const date = parsed.data.date ? new Date(parsed.data.date) : new Date();
 
@@ -82,6 +98,7 @@ export async function createTransaction(
       note: parsed.data.note ?? "",
       date: isNaN(date.getTime()) ? new Date() : date,
       categoryId,
+      accountId,
     },
   });
 
@@ -126,6 +143,7 @@ export async function updateTransaction(
     parsed.data.categoryId,
     parsed.data.type,
   );
+  const accountId = await resolveAccountId(userId, parsed.data.accountId);
 
   const date = parsed.data.date ? new Date(parsed.data.date) : new Date();
 
@@ -137,6 +155,7 @@ export async function updateTransaction(
       note: parsed.data.note ?? "",
       date: isNaN(date.getTime()) ? new Date() : date,
       categoryId,
+      accountId,
     },
   });
 
