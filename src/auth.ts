@@ -10,6 +10,8 @@ const credentialsSchema = z.object({
 });
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  // Nécessaire en auto-hébergé derrière un reverse proxy (Caddy/Nginx).
+  trustHost: true,
   session: { strategy: "jwt" },
   pages: {
     signIn: "/login",

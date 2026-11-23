@@ -3,8 +3,10 @@
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { AuthError } from "next-auth";
+import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { signIn } from "@/auth";
+import { rateLimit, purgeExpired } from "@/lib/rate-limit";
 
 const registerSchema = z.object({
   name: z.string().trim().max(80).optional(),
@@ -67,6 +69,22 @@ export async function login(
   _prev: LoginState,
   formData: FormData,
 ): Promise<LoginState> {
+  // Anti-force-brute : 5 tentatives / 5 min par IP + email.
+  purgeExpired();
+  const hdrs = await headers();
+  const ip =
+    hdrs.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    hdrs.get("x-real-ip") ||
+    "local";
+  const email = String(formData.get("email") ?? "").toLowerCase();
+  const { allowed, retryAfter } = rateLimit(`login:${ip}:${email}`);
+  if (!allowed) {
+    const minutes = Math.ceil(retryAfter / 60);
+    return {
+      error: `Trop de tentatives. Réessayez dans ${minutes} min.`,
+    };
+  }
+
   try {
     await signIn("credentials", {
       email: formData.get("email"),
