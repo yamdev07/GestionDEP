@@ -9,6 +9,7 @@ import {
 import type { ActionResult } from "@/lib/actions/transactions";
 import { Button, Card, Input } from "@/components/ui";
 import { CategoryIcon } from "@/components/category-icon";
+import { useConfirm } from "@/components/confirm-dialog";
 import { formatMoney } from "@/lib/utils";
 
 type CatView = {
@@ -102,14 +103,16 @@ export function CategoryManager({
 
 function CategoryItem({ cat, currency }: { cat: CatView; currency: string }) {
   const [pending, startTransition] = useTransition();
+  const confirm = useConfirm();
 
-  function onDelete() {
-    if (
-      !confirm(
-        `Supprimer « ${cat.name} » ? Les ${cat.count} dépense(s) liées passeront en « Sans catégorie ».`,
-      )
-    )
-      return;
+  async function onDelete() {
+    const ok = await confirm({
+      title: `Supprimer « ${cat.name} »`,
+      message: `Les ${cat.count} dépense${cat.count > 1 ? "s" : ""} liée${cat.count > 1 ? "s" : ""} passeront en « Sans catégorie ».`,
+      confirmLabel: "Supprimer",
+      tone: "danger",
+    });
+    if (!ok) return;
     startTransition(async () => {
       await deleteCategory(cat.id);
     });

@@ -6,6 +6,7 @@ import { Trash2, Wallet, Pencil } from "lucide-react";
 import { deleteTransaction } from "@/lib/actions/transactions";
 import { formatMoney, cn } from "@/lib/utils";
 import { CategoryIcon } from "@/components/category-icon";
+import { useConfirm } from "@/components/confirm-dialog";
 
 export type TransactionView = {
   id: string;
@@ -30,6 +31,7 @@ export function TransactionRow({
   editable?: boolean;
 }) {
   const [pending, startTransition] = useTransition();
+  const confirm = useConfirm();
   const isIncome = tx.type === "INCOME";
 
   const dateLabel = new Date(tx.date).toLocaleDateString("fr-FR", {
@@ -38,8 +40,14 @@ export function TransactionRow({
     year: "numeric",
   });
 
-  function onDelete() {
-    if (!confirm("Supprimer cette opération ?")) return;
+  async function onDelete() {
+    const ok = await confirm({
+      title: "Supprimer l'opération",
+      message: `« ${title} » sera définitivement supprimée.`,
+      confirmLabel: "Supprimer",
+      tone: "danger",
+    });
+    if (!ok) return;
     startTransition(async () => {
       await deleteTransaction(tx.id);
     });
