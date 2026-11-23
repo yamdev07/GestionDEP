@@ -1,0 +1,34 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: gestion
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-gestion}
+      POSTGRES_DB: gestion_depenses
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gestion -d gestion_depenses"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # Pas de port exposé vers l'extérieur : seule l'app y accède en interne.
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://gestion:${DB_PASSWORD:-gestion}@db:5432/gestion_depenses?schema=public
+      AUTH_SECRET: ${AUTH_SECRET:?Définis AUTH_SECRET dans un fichier .env à côté du docker-compose.yml}
+      AUTH_URL: ${AUTH_URL:-http://localhost:3000}
+      AUTH_TRUST_HOST: "true"
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+
+volumes:
+  db_data:

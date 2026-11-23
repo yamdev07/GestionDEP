@@ -1,8 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Sortie autonome : image Docker légère, ne copie que le nécessaire.
-  output: "standalone",
   turbopack: {
     rules: {
       "*.css": {
