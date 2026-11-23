@@ -1,0 +1,61 @@
+# Déploiement en PRODUCTION (auto-hébergé) avec HTTPS automatique via Caddy.
+#
+# Prérequis :
+#   - Un serveur avec Docker, accessible depuis Internet (ports 80 et 443 ouverts).
+#   - Un nom de domaine (DOMAIN) dont l'enregistrement A/AAAA pointe vers ce serveur.
+#   - Un fichier .env renseigné : DOMAIN, DB_PASSWORD, AUTH_SECRET.
+#
+# Lancement :
+#   docker compose -f docker-compose.prod.yml up -d --build
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: gestion
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Definis DB_PASSWORD dans .env}
+      POSTGRES_DB: gestion_depenses
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gestion -d gestion_depenses"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # Base jamais exposée à l'extérieur.
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://gestion:${DB_PASSWORD}@db:5432/gestion_depenses?schema=public
+      AUTH_SECRET: ${AUTH_SECRET:?Definis AUTH_SECRET dans .env}
+      AUTH_URL: https://${DOMAIN:?Definis DOMAIN dans .env}
+      AUTH_TRUST_HOST: "true"
+      NODE_ENV: production
+    expose:
+      - "3000"
+    # Pas de port publié : seul Caddy est exposé à Internet.
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?Definis DOMAIN dans .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  db_data:
+  caddy_data:
+  caddy_config:

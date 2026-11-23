@@ -1,0 +1,6 @@
+# Reverse proxy + HTTPS automatique (Let's Encrypt) pour l'app.
+# Le domaine est fourni par la variable DOMAIN (voir .env / docker-compose.prod.yml).
+{$DOMAIN} {
+	encode zstd gzip
+	reverse_proxy app:3000
+}
