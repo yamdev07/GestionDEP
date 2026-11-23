@@ -3,6 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { ensureDefaultAccount } from "@/lib/actions/accounts";
 import { AppShell } from "@/components/app-shell";
 import {
   AddTransactionForm,
@@ -21,7 +22,9 @@ export default async function EditTransactionPage({
 
   const { id } = await params;
 
-  const [user, categories, tx] = await Promise.all([
+  await ensureDefaultAccount(userId);
+
+  const [user, categories, accounts, tx] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
       select: { currency: true },
@@ -29,6 +32,11 @@ export default async function EditTransactionPage({
     prisma.category.findMany({
       where: { userId },
       orderBy: { name: "asc" },
+      select: { id: true, name: true, color: true },
+    }),
+    prisma.account.findMany({
+      where: { userId },
+      orderBy: { createdAt: "asc" },
       select: { id: true, name: true, color: true },
     }),
     prisma.transaction.findFirst({
@@ -40,6 +48,7 @@ export default async function EditTransactionPage({
         note: true,
         date: true,
         categoryId: true,
+        accountId: true,
       },
     }),
   ]);
@@ -53,6 +62,7 @@ export default async function EditTransactionPage({
     note: tx.note,
     date: tx.date.toISOString(),
     categoryId: tx.categoryId,
+    accountId: tx.accountId,
   };
 
   return (
@@ -71,6 +81,7 @@ export default async function EditTransactionPage({
         <Card>
           <AddTransactionForm
             categories={categories}
+            accounts={accounts}
             currency={user.currency}
             initial={initial}
           />

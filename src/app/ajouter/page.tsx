@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { ensureDefaultAccount } from "@/lib/actions/accounts";
 import { AppShell } from "@/components/app-shell";
 import { AddTransactionForm } from "@/components/add-transaction-form";
 import { Card } from "@/components/ui";
@@ -19,7 +20,9 @@ export default async function AddPage({
   const { type } = await searchParams;
   const defaultType = type === "income" ? "INCOME" : "EXPENSE";
 
-  const [user, categories] = await Promise.all([
+  await ensureDefaultAccount(userId);
+
+  const [user, categories, accounts] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
       select: { currency: true },
@@ -27,6 +30,11 @@ export default async function AddPage({
     prisma.category.findMany({
       where: { userId },
       orderBy: { name: "asc" },
+      select: { id: true, name: true, color: true },
+    }),
+    prisma.account.findMany({
+      where: { userId },
+      orderBy: { createdAt: "asc" },
       select: { id: true, name: true, color: true },
     }),
   ]);
@@ -48,6 +56,7 @@ export default async function AddPage({
         <Card>
           <AddTransactionForm
             categories={categories}
+            accounts={accounts}
             currency={user.currency}
             defaultType={defaultType}
           />

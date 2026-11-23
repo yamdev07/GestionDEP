@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Tag, ListOrdered, ChevronRight } from "lucide-react";
+import { Tag, ListOrdered, Wallet, ChevronRight } from "lucide-react";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { AppShell } from "@/components/app-shell";
@@ -54,6 +54,8 @@ export default async function ProfilePage() {
 
         {/* Raccourcis */}
         <Card className="p-0">
+          <LinkRow href="/comptes" icon={<Wallet className="h-5 w-5" />} label="Comptes" />
+          <div className="border-t border-border" />
           <LinkRow href="/categories" icon={<Tag className="h-5 w-5" />} label="Catégories" />
           <div className="border-t border-border" />
           <LinkRow

@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowUpRight, ArrowDownRight, Plus } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Plus, ChevronRight } from "lucide-react";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { ensureDefaultAccount } from "@/lib/actions/accounts";
+import { accountTypeIcon } from "@/lib/account-types";
 import { AppShell } from "@/components/app-shell";
 import { BalanceCard } from "@/components/balance-card";
 import { CategoryChart } from "@/components/category-chart";
+import { CategoryIcon } from "@/components/category-icon";
 import {
   TransactionRow,
   type TransactionView,
@@ -26,6 +29,8 @@ export default async function DashboardPage() {
   if (!user) redirect("/login");
   const currency = user.currency;
 
+  await ensureDefaultAccount(userId);
+
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
@@ -34,7 +39,7 @@ export default async function DashboardPage() {
     year: "numeric",
   });
 
-  const [monthTx, recent] = await Promise.all([
+  const [monthTx, recent, accounts, accountGroups] = await Promise.all([
     prisma.transaction.findMany({
       where: { userId, date: { gte: monthStart, lt: monthEnd } },
       include: { category: { select: { name: true, color: true, icon: true } } },
@@ -45,7 +50,32 @@ export default async function DashboardPage() {
       take: 6,
       include: { category: { select: { name: true, color: true, icon: true } } },
     }),
+    prisma.account.findMany({
+      where: { userId },
+      orderBy: { createdAt: "asc" },
+    }),
+    prisma.transaction.groupBy({
+      by: ["accountId", "type"],
+      where: { userId, accountId: { not: null } },
+      _sum: { amountCents: true },
+    }),
   ]);
+
+  // Solde par compte = solde de départ + revenus − dépenses.
+  const accountSums = new Map<string, number>();
+  for (const g of accountGroups) {
+    if (!g.accountId) continue;
+    const delta =
+      (g.type === "INCOME" ? 1 : -1) * (g._sum.amountCents ?? 0);
+    accountSums.set(g.accountId, (accountSums.get(g.accountId) ?? 0) + delta);
+  }
+  const accountRows = accounts.map((a) => ({
+    id: a.id,
+    name: a.name,
+    type: a.type,
+    color: a.color,
+    balanceCents: a.initialBalanceCents + (accountSums.get(a.id) ?? 0),
+  }));
 
   const incomeCents = monthTx
     .filter((t) => t.type === "INCOME")
@@ -93,6 +123,39 @@ export default async function DashboardPage() {
             icon={<ArrowDownRight className="h-5 w-5" />}
           />
         </div>
+
+        {/* Mes comptes */}
+        <Card>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-base font-bold">Mes comptes</h2>
+            <Link
+              href="/comptes"
+              className="flex items-center text-sm font-medium text-primary hover:underline"
+            >
+              Gérer <ChevronRight className="h-4 w-4" />
+            </Link>
+          </div>
+          <div className="flex gap-3 overflow-x-auto pb-1">
+            {accountRows.map((a) => (
+              <Link
+                key={a.id}
+                href="/comptes"
+                className="flex min-w-[8.5rem] shrink-0 flex-col gap-2 rounded-2xl border border-border bg-surface-muted/60 p-3 transition hover:bg-surface-muted"
+              >
+                <CategoryIcon
+                  icon={accountTypeIcon(a.type)}
+                  color={a.color}
+                  className="h-9 w-9 rounded-xl"
+                  size={16}
+                />
+                <span className="truncate text-sm font-medium">{a.name}</span>
+                <span className="text-sm font-bold tabular-nums">
+                  {formatMoney(a.balanceCents, currency)}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </Card>
 
         {/* Répartition */}
         <Card>

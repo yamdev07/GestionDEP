@@ -12,6 +12,7 @@ import { Button, Input } from "@/components/ui";
 import { cn, toDateInputValue, currencySymbol } from "@/lib/utils";
 
 type Cat = { id: string; name: string; color: string };
+type Acc = { id: string; name: string; color: string };
 
 export type TransactionInitial = {
   id: string;
@@ -20,6 +21,7 @@ export type TransactionInitial = {
   note: string;
   date: string; // ISO
   categoryId: string | null;
+  accountId: string | null;
 };
 
 /** Convertit des centimes en valeur de saisie ("1350" ou "12.5"). */
@@ -30,11 +32,13 @@ function centsToInput(amountCents: number): string {
 
 export function AddTransactionForm({
   categories,
+  accounts,
   currency,
   defaultType = "EXPENSE",
   initial = null,
 }: {
   categories: Cat[];
+  accounts: Acc[];
   currency: string;
   defaultType?: "INCOME" | "EXPENSE";
   initial?: TransactionInitial | null;
@@ -59,6 +63,9 @@ export function AddTransactionForm({
   );
   const [categoryId, setCategoryId] = useState<string>(
     initial?.categoryId ?? categories[0]?.id ?? "",
+  );
+  const [accountId, setAccountId] = useState<string>(
+    initial?.accountId ?? accounts[0]?.id ?? "",
   );
   const amountRef = useRef<HTMLInputElement>(null);
 
@@ -124,6 +131,39 @@ export function AddTransactionForm({
           {symbol}
         </span>
       </div>
+
+      {/* Compte / portefeuille */}
+      {accounts.length > 0 && (
+        <div>
+          <p className="mb-2 text-sm font-medium text-muted">Compte</p>
+          <input type="hidden" name="accountId" value={accountId} />
+          <div className="flex flex-wrap gap-2">
+            {accounts.map((a) => {
+              const active = a.id === accountId;
+              return (
+                <button
+                  type="button"
+                  key={a.id}
+                  onClick={() => setAccountId(a.id)}
+                  className={cn(
+                    "flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-2 text-sm font-medium transition",
+                    active
+                      ? "border-transparent text-white"
+                      : "border-border bg-surface text-foreground hover:bg-surface-muted",
+                  )}
+                  style={active ? { backgroundColor: a.color } : undefined}
+                >
+                  <span
+                    className="h-2.5 w-2.5 rounded-full"
+                    style={{ backgroundColor: active ? "#ffffff" : a.color }}
+                  />
+                  {a.name}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Catégories (dépenses uniquement) */}
       {!isIncome && (
