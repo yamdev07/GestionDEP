@@ -1,13 +1,18 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
-import { TrendingUp, Receipt, CalendarDays } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Plus } from "lucide-react";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { AppShell } from "@/components/app-shell";
-import { QuickAddForm } from "@/components/quick-add-form";
+import { BalanceCard } from "@/components/balance-card";
 import { CategoryChart } from "@/components/category-chart";
-import { ExpenseRow, type ExpenseView } from "@/components/expense-row";
+import {
+  TransactionRow,
+  type TransactionView,
+} from "@/components/transaction-row";
 import { Card } from "@/components/ui";
 import { formatMoney } from "@/lib/utils";
+import { toTransactionView } from "@/lib/views";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -23,105 +28,105 @@ export default async function DashboardPage() {
 
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
   const monthLabel = now.toLocaleDateString("fr-FR", {
     month: "long",
     year: "numeric",
   });
 
-  const [categories, monthExpenses, recent] = await Promise.all([
-    prisma.category.findMany({
-      where: { userId },
-      orderBy: { name: "asc" },
-      select: { id: true, name: true, color: true },
+  const [monthTx, recent] = await Promise.all([
+    prisma.transaction.findMany({
+      where: { userId, date: { gte: monthStart, lt: monthEnd } },
+      include: { category: { select: { name: true, color: true, icon: true } } },
     }),
-    prisma.expense.findMany({
-      where: { userId, date: { gte: monthStart } },
-      include: { category: { select: { name: true, color: true } } },
-    }),
-    prisma.expense.findMany({
+    prisma.transaction.findMany({
       where: { userId },
       orderBy: { date: "desc" },
-      take: 8,
-      include: { category: { select: { name: true, color: true } } },
+      take: 6,
+      include: { category: { select: { name: true, color: true, icon: true } } },
     }),
   ]);
 
-  // Totaux
-  const monthTotal = monthExpenses.reduce((s, e) => s + e.amountCents, 0);
-  const count = monthExpenses.length;
+  const incomeCents = monthTx
+    .filter((t) => t.type === "INCOME")
+    .reduce((s, t) => s + t.amountCents, 0);
+  const expenseCents = monthTx
+    .filter((t) => t.type === "EXPENSE")
+    .reduce((s, t) => s + t.amountCents, 0);
+  const balanceCents = incomeCents - expenseCents;
 
-  // Répartition par catégorie
+  // Répartition des dépenses par catégorie (ce mois).
   const byCat = new Map<string, { name: string; value: number; color: string }>();
-  for (const e of monthExpenses) {
-    const key = e.category?.name ?? "Sans catégorie";
-    const color = e.category?.color ?? "#6b7280";
+  for (const t of monthTx) {
+    if (t.type !== "EXPENSE") continue;
+    const key = t.category?.name ?? "Sans catégorie";
+    const color = t.category?.color ?? "#9ca3af";
     const entry = byCat.get(key) ?? { name: key, value: 0, color };
-    entry.value += e.amountCents;
+    entry.value += t.amountCents;
     byCat.set(key, entry);
   }
   const chartData = [...byCat.values()].sort((a, b) => b.value - a.value);
 
-  const recentViews: ExpenseView[] = recent.map((e) => ({
-    id: e.id,
-    amountCents: e.amountCents,
-    note: e.note,
-    date: e.date.toISOString(),
-    categoryName: e.category?.name ?? null,
-    categoryColor: e.category?.color ?? null,
-  }));
+  const recentViews: TransactionView[] = recent.map(toTransactionView);
 
   return (
-    <AppShell userName={user.name}>
+    <AppShell>
       <div className="space-y-5">
-        {/* Saisie éclair */}
-        <Card className="bg-surface">
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted">
-            Nouvelle dépense
-          </h2>
-          <QuickAddForm categories={categories} currency={currency} />
-        </Card>
+        <BalanceCard
+          balanceCents={balanceCents}
+          monthLabel={monthLabel}
+          currency={currency}
+        />
 
-        {/* Statistiques du mois */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          <StatCard
-            icon={<TrendingUp className="h-5 w-5" />}
-            label={`Total ${monthLabel}`}
-            value={formatMoney(monthTotal, currency)}
+        {/* Revenus / Dépenses */}
+        <div className="grid grid-cols-2 gap-3">
+          <SummaryCard
+            label="Revenus"
+            value={formatMoney(incomeCents, currency)}
+            tone="success"
+            icon={<ArrowUpRight className="h-5 w-5" />}
           />
-          <StatCard
-            icon={<Receipt className="h-5 w-5" />}
+          <SummaryCard
             label="Dépenses"
-            value={String(count)}
-          />
-          <StatCard
-            icon={<CalendarDays className="h-5 w-5" />}
-            label="Moyenne / dépense"
-            value={formatMoney(count ? Math.round(monthTotal / count) : 0, currency)}
-            className="col-span-2 sm:col-span-1"
+            value={formatMoney(expenseCents, currency)}
+            tone="danger"
+            icon={<ArrowDownRight className="h-5 w-5" />}
           />
         </div>
 
         {/* Répartition */}
         <Card>
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted">
-            Répartition du mois
-          </h2>
+          <h2 className="mb-4 text-base font-bold">Répartition des dépenses</h2>
           <CategoryChart data={chartData} currency={currency} />
         </Card>
 
-        {/* Dépenses récentes */}
+        {/* Ajouter */}
+        <Link
+          href="/ajouter"
+          className="gradient-primary flex h-14 w-full items-center justify-center gap-2 rounded-2xl text-base font-semibold text-white shadow-lg shadow-primary/25 transition active:scale-[0.99]"
+        >
+          <Plus className="h-5 w-5" /> Ajouter une opération
+        </Link>
+
+        {/* Dernières opérations */}
         <Card>
-          <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-muted">
-            Dernières dépenses
-          </h2>
+          <div className="mb-1 flex items-center justify-between">
+            <h2 className="text-base font-bold">Dernières opérations</h2>
+            <Link
+              href="/operations"
+              className="text-sm font-medium text-primary hover:underline"
+            >
+              Voir tout
+            </Link>
+          </div>
           {recentViews.length === 0 ? (
             <p className="py-6 text-center text-sm text-muted">
-              Aucune dépense pour l&apos;instant. Ajoute ta première ci-dessus ☝️
+              Aucune opération. Ajoute la première avec le bouton + ☝️
             </p>
           ) : (
             <ul className="divide-y divide-border">
-              {recentViews.map((e) => (
-                <ExpenseRow key={e.id} expense={e} currency={currency} />
+              {recentViews.map((t) => (
+                <TransactionRow key={t.id} tx={t} currency={currency} />
               ))}
             </ul>
           )}
@@ -131,24 +136,31 @@ export default async function DashboardPage() {
   );
 }
 
-function StatCard({
-  icon,
+function SummaryCard({
   label,
   value,
-  className,
+  tone,
+  icon,
 }: {
-  icon: React.ReactNode;
   label: string;
   value: string;
-  className?: string;
+  tone: "success" | "danger";
+  icon: React.ReactNode;
 }) {
+  const color = tone === "success" ? "var(--success)" : "var(--danger)";
   return (
-    <Card className={`p-4 ${className ?? ""}`}>
-      <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+    <Card className="p-4">
+      <div
+        className="mb-3 flex h-9 w-9 items-center justify-center rounded-full"
+        style={{
+          color,
+          backgroundColor: `color-mix(in srgb, ${color} 14%, transparent)`,
+        }}
+      >
         {icon}
       </div>
-      <p className="text-xs text-muted">{label}</p>
-      <p className="mt-0.5 text-xl font-bold">{value}</p>
+      <p className="text-sm text-muted">{label}</p>
+      <p className="mt-0.5 text-lg font-bold tabular-nums">{value}</p>
     </Card>
   );
 }

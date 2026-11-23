@@ -19,6 +19,25 @@ export function formatMoney(amountCents: number, currency = "EUR"): string {
   }
 }
 
+/** Symbole court d'une devise (pour la saisie). */
+export function currencySymbol(currency: string): string {
+  switch (currency) {
+    case "EUR":
+      return "€";
+    case "USD":
+    case "CAD":
+      return "$";
+    case "XOF":
+      return "F CFA";
+    case "XAF":
+      return "FCFA";
+    case "MAD":
+      return "DH";
+    default:
+      return currency;
+  }
+}
+
 /** Convertit une saisie texte ("12,50" ou "12.5") en centimes entiers. */
 export function parseAmountToCents(input: string): number | null {
   const normalized = input.trim().replace(/\s/g, "").replace(",", ".");

@@ -1,0 +1,88 @@
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { Tag } from "lucide-react";
+import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
+import { AppShell } from "@/components/app-shell";
+import { BudgetManager, type BudgetRowData } from "@/components/budget-manager";
+import { Card } from "@/components/ui";
+
+export default async function BudgetsPage() {
+  const session = await auth();
+  if (!session?.user?.id) redirect("/login");
+  const userId = session.user.id;
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { currency: true },
+  });
+  if (!user) redirect("/login");
+
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+
+  const [categories, monthExpenses] = await Promise.all([
+    prisma.category.findMany({
+      where: { userId },
+      orderBy: { name: "asc" },
+      include: { budget: { select: { amountCents: true } } },
+    }),
+    prisma.transaction.groupBy({
+      by: ["categoryId"],
+      where: {
+        userId,
+        type: "EXPENSE",
+        date: { gte: monthStart, lt: monthEnd },
+      },
+      _sum: { amountCents: true },
+    }),
+  ]);
+
+  const spentByCat = new Map<string, number>();
+  for (const g of monthExpenses) {
+    if (g.categoryId) spentByCat.set(g.categoryId, g._sum.amountCents ?? 0);
+  }
+
+  const rows: BudgetRowData[] = categories.map((c) => ({
+    id: c.id,
+    name: c.name,
+    color: c.color,
+    icon: c.icon,
+    budgetCents: c.budget?.amountCents ?? null,
+    spentCents: spentByCat.get(c.id) ?? 0,
+  }));
+
+  const monthLabel = now.toLocaleDateString("fr-FR", {
+    month: "long",
+    year: "numeric",
+  });
+
+  return (
+    <AppShell>
+      <div className="space-y-5">
+        <div>
+          <h1 className="text-2xl font-bold">Budgets</h1>
+          <p className="text-sm capitalize text-muted">{monthLabel}</p>
+        </div>
+
+        {rows.length === 0 ? (
+          <Card className="flex flex-col items-center gap-3 py-10 text-center">
+            <Tag className="h-8 w-8 text-muted" />
+            <p className="text-sm text-muted">
+              Crée d&apos;abord des catégories pour définir des budgets.
+            </p>
+            <Link
+              href="/categories"
+              className="text-sm font-medium text-primary hover:underline"
+            >
+              Gérer les catégories
+            </Link>
+          </Card>
+        ) : (
+          <BudgetManager rows={rows} currency={user.currency} />
+        )}
+      </div>
+    </AppShell>
+  );
+}

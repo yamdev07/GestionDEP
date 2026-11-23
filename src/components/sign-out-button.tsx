@@ -10,8 +10,9 @@ export function SignOutButton() {
         await signOut({ redirectTo: "/login" });
       }}
     >
-      <Button variant="ghost" size="icon" title="Se déconnecter" type="submit">
-        <LogOut className="h-5 w-5" />
+      <Button variant="outline" className="w-full text-danger" type="submit">
+        <LogOut className="h-4 w-4" />
+        Se déconnecter
       </Button>
     </form>
   );

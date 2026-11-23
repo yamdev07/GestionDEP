@@ -12,12 +12,12 @@ export default async function RegisterPage() {
     <main className="flex min-h-dvh items-center justify-center p-4">
       <div className="w-full max-w-sm">
         <div className="mb-6 flex flex-col items-center gap-3 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
+          <div className="gradient-primary flex h-12 w-12 items-center justify-center rounded-2xl text-white">
             <Wallet className="h-6 w-6" />
           </div>
           <div>
             <h1 className="text-2xl font-bold">Créer un compte</h1>
-            <p className="text-sm text-muted">Commence à suivre tes dépenses</p>
+            <p className="text-sm text-muted">Commence à suivre tes finances</p>
           </div>
         </div>
         <Card>

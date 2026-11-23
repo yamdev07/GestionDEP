@@ -1,4 +1,4 @@
-// Schéma de base de données — Gestion de dépenses
+// Schéma de base de données — MonBudget (revenus & dépenses)
 // Docs: https://pris.ly/d/prisma-schema
 
 generator client {
@@ -10,49 +10,74 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+/// Type d'une opération : une entrée d'argent (revenu) ou une sortie (dépense).
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
 /// Un utilisateur. Chaque utilisateur ne voit QUE ses propres données.
 model User {
   id           String     @id @default(cuid())
   email        String     @unique
   name         String?
   passwordHash String
-  currency     String     @default("EUR") // devise affichée (EUR, USD, XOF, ...)
+  currency     String     @default("XOF") // devise affichée (XOF, XAF, EUR, USD, ...)
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
   categories   Category[]
-  expenses     Expense[]
+  transactions Transaction[]
+  budgets      Budget[]
 }
 
-/// Catégorie de dépense, personnalisable par utilisateur.
+/// Catégorie, personnalisable par utilisateur (utilisée par les dépenses).
 model Category {
   id        String    @id @default(cuid())
   name      String
   color     String    @default("#6366f1") // couleur hex pour les graphiques
-  icon      String    @default("tag")     // nom d'icône lucide
+  icon      String    @default("tag")     // nom d'icône lucide (kebab-case)
   userId    String
   createdAt DateTime  @default(now())
 
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expenses  Expense[]
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+  budget       Budget?
 
   @@unique([userId, name])
   @@index([userId])
 }
 
-/// Une dépense. Montant stocké en centimes (entier) pour éviter les erreurs d'arrondi.
-model Expense {
-  id          String    @id @default(cuid())
-  amountCents Int       // ex: 12,50 € => 1250
-  note        String    @default("")
-  date        DateTime  @default(now())
+/// Une opération (revenu ou dépense). Montant stocké en centimes (entier).
+model Transaction {
+  id          String          @id @default(cuid())
+  type        TransactionType @default(EXPENSE)
+  amountCents Int             // ex: 12,50 € => 1250 ; 5000 F CFA => 500000
+  note        String          @default("")
+  date        DateTime        @default(now())
   userId      String
   categoryId  String?
-  createdAt   DateTime  @default(now())
+  createdAt   DateTime        @default(now())
 
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   category    Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
   @@index([userId, date])
+  @@index([userId, type])
   @@index([categoryId])
+}
+
+/// Budget mensuel optionnel pour une catégorie (plafond de dépenses).
+model Budget {
+  id         String   @id @default(cuid())
+  amountCents Int                        // plafond mensuel en centimes
+  userId     String
+  categoryId String   @unique            // un seul budget par catégorie
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }

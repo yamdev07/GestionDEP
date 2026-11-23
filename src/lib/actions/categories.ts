@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import type { ActionResult } from "@/lib/actions/expenses";
+import type { ActionResult } from "@/lib/actions/transactions";
 
 async function requireUserId(): Promise<string> {
   const session = await auth();

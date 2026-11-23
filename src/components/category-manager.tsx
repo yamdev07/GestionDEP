@@ -6,14 +6,16 @@ import {
   createCategory,
   deleteCategory,
 } from "@/lib/actions/categories";
-import type { ActionResult } from "@/lib/actions/expenses";
+import type { ActionResult } from "@/lib/actions/transactions";
 import { Button, Card, Input } from "@/components/ui";
+import { CategoryIcon } from "@/components/category-icon";
 import { formatMoney } from "@/lib/utils";
 
 type CatView = {
   id: string;
   name: string;
   color: string;
+  icon: string;
   count: number;
   totalCents: number;
 };
@@ -115,9 +117,11 @@ function CategoryItem({ cat, currency }: { cat: CatView; currency: string }) {
 
   return (
     <li className={`flex items-center gap-3 py-3 ${pending ? "opacity-40" : ""}`}>
-      <span
-        className="h-9 w-9 shrink-0 rounded-full"
-        style={{ backgroundColor: cat.color }}
+      <CategoryIcon
+        icon={cat.icon}
+        color={cat.color}
+        className="h-10 w-10 shrink-0 rounded-xl"
+        size={18}
       />
       <div className="min-w-0 flex-1">
         <p className="truncate font-medium">{cat.name}</p>

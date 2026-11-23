@@ -14,20 +14,44 @@ async function requireUserId(): Promise<string> {
 
 export type ActionResult = { ok: boolean; error?: string };
 
-const expenseInput = z.object({
+function revalidateAll() {
+  revalidatePath("/");
+  revalidatePath("/operations");
+  revalidatePath("/statistiques");
+  revalidatePath("/budgets");
+}
+
+const transactionInput = z.object({
+  type: z.enum(["INCOME", "EXPENSE"]).default("EXPENSE"),
   amount: z.string().min(1, "Montant requis"),
   note: z.string().trim().max(200).optional(),
   date: z.string().optional(),
   categoryId: z.string().optional(),
 });
 
-export async function createExpense(
+/** Valide la catégorie et retourne son id si elle appartient à l'utilisateur. */
+async function resolveCategoryId(
+  userId: string,
+  categoryId: string | undefined,
+  type: "INCOME" | "EXPENSE",
+): Promise<string | null> {
+  // Les revenus ne sont pas catégorisés dans cette version.
+  if (type === "INCOME" || !categoryId) return null;
+  const cat = await prisma.category.findFirst({
+    where: { id: categoryId, userId },
+    select: { id: true },
+  });
+  return cat?.id ?? null;
+}
+
+export async function createTransaction(
   _prev: ActionResult | undefined,
   formData: FormData,
 ): Promise<ActionResult> {
   const userId = await requireUserId();
 
-  const parsed = expenseInput.safeParse({
+  const parsed = transactionInput.safeParse({
+    type: formData.get("type") || undefined,
     amount: formData.get("amount"),
     note: formData.get("note") || undefined,
     date: formData.get("date") || undefined,
@@ -42,21 +66,18 @@ export async function createExpense(
     return { ok: false, error: "Montant invalide" };
   }
 
-  // Vérifie que la catégorie appartient bien à l'utilisateur.
-  let categoryId: string | null = null;
-  if (parsed.data.categoryId) {
-    const cat = await prisma.category.findFirst({
-      where: { id: parsed.data.categoryId, userId },
-      select: { id: true },
-    });
-    categoryId = cat?.id ?? null;
-  }
+  const categoryId = await resolveCategoryId(
+    userId,
+    parsed.data.categoryId,
+    parsed.data.type,
+  );
 
   const date = parsed.data.date ? new Date(parsed.data.date) : new Date();
 
-  await prisma.expense.create({
+  await prisma.transaction.create({
     data: {
       userId,
+      type: parsed.data.type,
       amountCents,
       note: parsed.data.note ?? "",
       date: isNaN(date.getTime()) ? new Date() : date,
@@ -64,23 +85,20 @@ export async function createExpense(
     },
   });
 
-  revalidatePath("/");
-  revalidatePath("/depenses");
+  revalidateAll();
   return { ok: true };
 }
 
-export async function deleteExpense(id: string): Promise<ActionResult> {
+export async function deleteTransaction(id: string): Promise<ActionResult> {
   const userId = await requireUserId();
-  // deleteMany avec userId => impossible de supprimer la dépense d'un autre.
-  await prisma.expense.deleteMany({ where: { id, userId } });
-  revalidatePath("/");
-  revalidatePath("/depenses");
+  await prisma.transaction.deleteMany({ where: { id, userId } });
+  revalidateAll();
   return { ok: true };
 }
 
-const updateInput = expenseInput.extend({ id: z.string().min(1) });
+const updateInput = transactionInput.extend({ id: z.string().min(1) });
 
-export async function updateExpense(
+export async function updateTransaction(
   _prev: ActionResult | undefined,
   formData: FormData,
 ): Promise<ActionResult> {
@@ -88,6 +106,7 @@ export async function updateExpense(
 
   const parsed = updateInput.safeParse({
     id: formData.get("id"),
+    type: formData.get("type") || undefined,
     amount: formData.get("amount"),
     note: formData.get("note") || undefined,
     date: formData.get("date") || undefined,
@@ -102,20 +121,18 @@ export async function updateExpense(
     return { ok: false, error: "Montant invalide" };
   }
 
-  let categoryId: string | null = null;
-  if (parsed.data.categoryId) {
-    const cat = await prisma.category.findFirst({
-      where: { id: parsed.data.categoryId, userId },
-      select: { id: true },
-    });
-    categoryId = cat?.id ?? null;
-  }
+  const categoryId = await resolveCategoryId(
+    userId,
+    parsed.data.categoryId,
+    parsed.data.type,
+  );
 
   const date = parsed.data.date ? new Date(parsed.data.date) : new Date();
 
-  await prisma.expense.updateMany({
+  await prisma.transaction.updateMany({
     where: { id: parsed.data.id, userId },
     data: {
+      type: parsed.data.type,
       amountCents,
       note: parsed.data.note ?? "",
       date: isNaN(date.getTime()) ? new Date() : date,
@@ -123,7 +140,6 @@ export async function updateExpense(
     },
   });
 
-  revalidatePath("/");
-  revalidatePath("/depenses");
+  revalidateAll();
   return { ok: true };
 }

@@ -1,31 +1,36 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f7f7f8;
+  color-scheme: light;
+  --background: #f4f3fb;
   --surface: #ffffff;
-  --surface-muted: #f1f1f4;
-  --foreground: #18181b;
+  --surface-muted: #f1f0f8;
+  --foreground: #1b1630;
   --muted: #6b7280;
-  --border: #e5e7eb;
-  --primary: #6366f1;
+  --border: #ececf3;
+  --primary: #6d28d9;
   --primary-foreground: #ffffff;
+  --primary-from: #7c3aed;
+  --primary-to: #5b21b6;
   --danger: #ef4444;
-  --success: #22c55e;
+  --success: #16a34a;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0b;
-    --surface: #151518;
-    --surface-muted: #1f1f24;
-    --foreground: #f4f4f5;
-    --muted: #9ca3af;
-    --border: #2a2a31;
-    --primary: #818cf8;
-    --primary-foreground: #0a0a0b;
-    --danger: #f87171;
-    --success: #4ade80;
-  }
+/* Mode sombre : désormais opt-in (<html data-theme="dark">), plus lié au réglage OS. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #0c0a14;
+  --surface: #17141f;
+  --surface-muted: #221d2e;
+  --foreground: #f4f2fb;
+  --muted: #9ca3af;
+  --border: #2a2535;
+  --primary: #8b5cf6;
+  --primary-foreground: #ffffff;
+  --primary-from: #7c3aed;
+  --primary-to: #4c1d95;
+  --danger: #f87171;
+  --success: #4ade80;
 }
 
 @theme inline {
@@ -37,9 +42,16 @@
   --color-border: var(--border);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-from: var(--primary-from);
+  --color-primary-to: var(--primary-to);
   --color-danger: var(--danger);
   --color-success: var(--success);
   --font-sans: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+/* Dégradé violet réutilisable (carte Solde, FAB) */
+.gradient-primary {
+  background-image: linear-gradient(135deg, var(--primary-from), var(--primary-to));
 }
 
 body {

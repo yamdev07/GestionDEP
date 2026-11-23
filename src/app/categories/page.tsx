@@ -19,18 +19,21 @@ export default async function CategoriesPage() {
     where: { userId },
     orderBy: { name: "asc" },
     include: {
-      _count: { select: { expenses: true } },
-      expenses: { select: { amountCents: true } },
+      transactions: { select: { amountCents: true, type: true } },
     },
   });
 
-  const views = categories.map((c) => ({
-    id: c.id,
-    name: c.name,
-    color: c.color,
-    count: c._count.expenses,
-    totalCents: c.expenses.reduce((s, e) => s + e.amountCents, 0),
-  }));
+  const views = categories.map((c) => {
+    const expenses = c.transactions.filter((t) => t.type === "EXPENSE");
+    return {
+      id: c.id,
+      name: c.name,
+      color: c.color,
+      icon: c.icon,
+      count: expenses.length,
+      totalCents: expenses.reduce((s, e) => s + e.amountCents, 0),
+    };
+  });
 
   return (
     <AppShell>

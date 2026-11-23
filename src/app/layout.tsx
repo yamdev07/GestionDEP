@@ -8,18 +8,18 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "Mes Dépenses",
-  description: "Gérez vos dépenses en quelques clics.",
+  title: "MonBudget",
+  description: "Suivez vos revenus et dépenses en quelques clics.",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
-    title: "Mes Dépenses",
+    title: "MonBudget",
     statusBarStyle: "default",
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#6366f1",
+  themeColor: "#6d28d9",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,

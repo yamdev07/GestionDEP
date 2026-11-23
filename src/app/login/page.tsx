@@ -12,11 +12,11 @@ export default async function LoginPage() {
     <main className="flex min-h-dvh items-center justify-center p-4">
       <div className="w-full max-w-sm">
         <div className="mb-6 flex flex-col items-center gap-3 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
+          <div className="gradient-primary flex h-12 w-12 items-center justify-center rounded-2xl text-white">
             <Wallet className="h-6 w-6" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold">Mes Dépenses</h1>
+            <h1 className="text-2xl font-bold">MonBudget</h1>
             <p className="text-sm text-muted">Content de te revoir 👋</p>
           </div>
         </div>
