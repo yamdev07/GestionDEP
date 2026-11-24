@@ -8,9 +8,14 @@ import { resolvePeriod } from "@/lib/period";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-/** Échappe un champ CSV (guillemets, point-virgule, retours à la ligne). */
+/**
+ * Échappe un champ CSV (guillemets, point-virgule, retours à la ligne) et
+ * neutralise l'injection de formules (un champ commençant par = + - @ pourrait
+ * être exécuté par Excel/Sheets) en le préfixant d'une apostrophe.
+ */
 function csv(value: string): string {
-  return `"${value.replace(/"/g, '""')}"`;
+  const safe = /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
+  return `"${safe.replace(/"/g, '""')}"`;
 }
 
 export async function GET(req: Request) {
