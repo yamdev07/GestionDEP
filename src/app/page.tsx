@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowUpRight, ArrowDownRight, Plus, ChevronRight } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Plus, ChevronRight, PiggyBank } from "lucide-react";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { ensureDefaultAccount } from "@/lib/actions/accounts";
@@ -41,7 +41,7 @@ export default async function DashboardPage() {
     year: "numeric",
   });
 
-  const [monthTx, recent, accounts, accountGroups] = await Promise.all([
+  const [monthTx, recent, accounts, accountGroups, savingsAgg] = await Promise.all([
     prisma.transaction.findMany({
       where: { userId, date: { gte: monthStart, lt: monthEnd } },
       include: { category: { select: { name: true, color: true, icon: true } } },
@@ -61,7 +61,15 @@ export default async function DashboardPage() {
       where: { userId, accountId: { not: null } },
       _sum: { amountCents: true },
     }),
+    prisma.savingsGoal.aggregate({
+      where: { userId },
+      _sum: { savedCents: true },
+      _count: true,
+    }),
   ]);
+
+  const savedCents = savingsAgg._sum.savedCents ?? 0;
+  const goalCount = savingsAgg._count;
 
   // Solde par compte = solde de départ + revenus − dépenses.
   const accountSums = new Map<string, number>();
@@ -158,6 +166,28 @@ export default async function DashboardPage() {
             ))}
           </div>
         </Card>
+
+        {/* Épargne */}
+        <Link href="/epargne" className="block">
+          <Card className="flex items-center gap-3 transition hover:bg-surface-muted">
+            <span
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl"
+              style={{ color: "var(--primary)", backgroundColor: "color-mix(in srgb, var(--primary) 12%, transparent)" }}
+            >
+              <PiggyBank className="h-5 w-5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm text-muted">Épargne</p>
+              <p className="text-lg font-bold tabular-nums">
+                {formatMoney(savedCents, currency)}
+              </p>
+            </div>
+            <span className="shrink-0 text-xs text-muted">
+              {goalCount} objectif{goalCount > 1 ? "s" : ""}
+            </span>
+            <ChevronRight className="h-5 w-5 shrink-0 text-muted" />
+          </Card>
+        </Link>
 
         {/* Répartition */}
         <Card>
