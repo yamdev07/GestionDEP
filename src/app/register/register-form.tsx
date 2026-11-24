@@ -1,33 +1,19 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useActionState } from "react";
 import Link from "next/link";
 import { registerUser, type RegisterState } from "@/lib/actions/auth";
 import { Button, Input, Label } from "@/components/ui";
 
 export function RegisterForm({ next = null }: { next?: string | null }) {
-  const router = useRouter();
-  const [done, setDone] = useState(false);
   const [state, formAction, pending] = useActionState<RegisterState, FormData>(
     registerUser,
     undefined,
   );
 
-  // La server action renvoie `undefined` en cas de succès (et un objet si erreur).
-  useEffect(() => {
-    if (state === undefined && pending === false && done) {
-      const suffix = next ? `&next=${encodeURIComponent(next)}` : "";
-      router.push(`/login?created=1${suffix}`);
-    }
-  }, [state, pending, done, router, next]);
-
   return (
-    <form
-      action={formAction}
-      onSubmit={() => setDone(true)}
-      className="space-y-4"
-    >
+    <form action={formAction} className="space-y-4">
+      {next && <input type="hidden" name="next" value={next} />}
       <div>
         <Label htmlFor="name">Nom (optionnel)</Label>
         <Input id="name" name="name" type="text" placeholder="Ton prénom" />

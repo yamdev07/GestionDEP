@@ -10,7 +10,7 @@ import {
   Check,
   Crown,
 } from "lucide-react";
-import { PLANS } from "@/lib/plans";
+import { PLANS, FREE_LIMITS, TRIAL_DAYS } from "@/lib/plans";
 import { formatMoney } from "@/lib/utils";
 
 const FEATURES = [
@@ -53,7 +53,11 @@ const PRICING: {
 }[] = [
   {
     key: "GRATUIT",
-    features: ["1 portefeuille", "50 opérations / mois", "1 objectif d'épargne"],
+    features: [
+      `${FREE_LIMITS.accounts} portefeuille`,
+      `${FREE_LIMITS.txPerMonth} opérations / mois`,
+      `${FREE_LIMITS.goals} objectif d'épargne`,
+    ],
   },
   {
     key: "ESSENTIEL",
@@ -178,7 +182,8 @@ export function Landing() {
       <section id="tarifs" className="mx-auto max-w-5xl px-4 pb-16 scroll-mt-6">
         <h2 className="mb-2 text-center text-2xl font-bold">Des tarifs simples</h2>
         <p className="mb-8 text-center text-muted">
-          Commence gratuitement, passe à un plan payant quand tu veux.
+          {TRIAL_DAYS} jours d&apos;essai Premium offerts à l&apos;inscription, puis
+          le plan de ton choix.
         </p>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {PRICING.map(({ key, features, highlight }) => {

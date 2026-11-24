@@ -3,14 +3,18 @@ import { Crown, Check } from "lucide-react";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getPlanStatus } from "@/lib/subscription";
-import { PLANS, PLAN_LABELS, type PlanKey } from "@/lib/plans";
+import { PLANS, PLAN_LABELS, FREE_LIMITS, type PlanKey } from "@/lib/plans";
 import { AppShell } from "@/components/app-shell";
 import { SubscribeButton } from "@/components/subscribe-button";
 import { Card } from "@/components/ui";
 import { formatMoney, cn } from "@/lib/utils";
 
 const PLAN_FEATURES: Record<PlanKey, string[]> = {
-  GRATUIT: ["1 portefeuille", "50 opérations / mois", "1 objectif d'épargne"],
+  GRATUIT: [
+    `${FREE_LIMITS.accounts} portefeuille`,
+    `${FREE_LIMITS.txPerMonth} opérations / mois`,
+    `${FREE_LIMITS.goals} objectif d'épargne`,
+  ],
   ESSENTIEL: [
     "Portefeuilles illimités",
     "Opérations illimitées",
@@ -52,6 +56,8 @@ export default async function SubscriptionPage({
 
   const currency = user.currency;
   const currentLabel = PLAN_LABELS[status.plan] ?? "Gratuit";
+  // On lance le paiement direct sauf si l'utilisateur possède DÉJÀ ce plan via un vrai paiement.
+  const autoPay = payPlan !== null && !(status.plan === payPlan && !status.trial);
 
   return (
     <AppShell>
@@ -81,18 +87,20 @@ export default async function SubscriptionPage({
             <p className="mt-3 text-sm text-white/85">
               {status.grandfathered
                 ? "Premium offert (membre des débuts) 🎉"
-                : status.planUntil
-                  ? `Actif jusqu'au ${status.planUntil.toLocaleDateString("fr-FR")}`
-                  : "Actif"}
+                : status.trial
+                  ? `Essai gratuit — ${status.daysLeft} jour${status.daysLeft && status.daysLeft > 1 ? "s" : ""} restant${status.daysLeft && status.daysLeft > 1 ? "s" : ""}. Passe au paiement pour ne rien perdre.`
+                  : status.planUntil
+                    ? `Actif jusqu'au ${status.planUntil.toLocaleDateString("fr-FR")}`
+                    : "Actif"}
             </p>
           )}
         </Card>
 
-        {/* Invitation à finaliser le paiement du plan choisi sur la landing */}
-        {payPlan && status.plan !== payPlan && (
+        {/* Redirection directe vers le paiement quand un plan payant est choisi */}
+        {autoPay && payPlan && (
           <div className="rounded-xl border border-primary bg-primary/10 px-4 py-3 text-sm font-medium text-primary">
-            Finalise ton abonnement <strong>{PLAN_LABELS[payPlan]}</strong> :
-            clique sur « Payer » dans la carte ci-dessous.
+            Redirection vers le paiement <strong>{PLAN_LABELS[payPlan]}</strong>…
+            Si rien ne se passe, clique sur « Payer » ci-dessous.
           </div>
         )}
 
@@ -126,7 +134,12 @@ export default async function SubscriptionPage({
                 ))}
               </ul>
               <div className="mt-4 space-y-2">
-                <SubscribeButton plan={p} cycle="MENSUEL" label={`Payer ${formatMoney(PLANS[p].monthlyCents, currency)}/mois`} />
+                <SubscribeButton
+                  plan={p}
+                  cycle="MENSUEL"
+                  label={`Payer ${formatMoney(PLANS[p].monthlyCents, currency)}/mois`}
+                  autoStart={autoPay && p === payPlan}
+                />
                 <SubscribeButton plan={p} cycle="ANNUEL" variant="outline" label={`Annuel · ${formatMoney(PLANS[p].annualCents, currency)}`} />
               </div>
             </Card>
