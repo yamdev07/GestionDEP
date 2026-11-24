@@ -156,7 +156,7 @@ export function Landing() {
       {/* Fonctionnalités */}
       <section className="mx-auto max-w-5xl px-4 pb-16">
         <h2 className="mb-6 text-center text-2xl font-bold">
-          Tout ce qu'il faut pour gérer votre budget
+          Tout ce qu&apos;il faut pour gérer votre budget
         </h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map((f) => (
@@ -221,7 +221,7 @@ export function Landing() {
                   ))}
                 </ul>
                 <Link
-                  href="/register"
+                  href={key === "GRATUIT" ? "/register" : `/register?plan=${key}`}
                   className={
                     "mt-5 flex h-11 items-center justify-center gap-2 rounded-xl font-semibold transition active:scale-[0.99] " +
                     (highlight || key === "PREMIUM"

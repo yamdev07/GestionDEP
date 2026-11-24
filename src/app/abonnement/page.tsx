@@ -26,10 +26,18 @@ const PLAN_FEATURES: Record<PlanKey, string[]> = {
   ],
 };
 
-export default async function SubscriptionPage() {
+export default async function SubscriptionPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ pay?: string }>;
+}) {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
   const userId = session.user.id;
+
+  const { pay } = await searchParams;
+  const payPlan: PlanKey | null =
+    pay === "ESSENTIEL" || pay === "PREMIUM" ? pay : null;
 
   const [user, status, history] = await Promise.all([
     prisma.user.findUnique({ where: { id: userId }, select: { currency: true } }),
@@ -80,6 +88,14 @@ export default async function SubscriptionPage() {
           )}
         </Card>
 
+        {/* Invitation à finaliser le paiement du plan choisi sur la landing */}
+        {payPlan && status.plan !== payPlan && (
+          <div className="rounded-xl border border-primary bg-primary/10 px-4 py-3 text-sm font-medium text-primary">
+            Finalise ton abonnement <strong>{PLAN_LABELS[payPlan]}</strong> :
+            clique sur « Payer » dans la carte ci-dessous.
+          </div>
+        )}
+
         {/* Choix de plan */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {(["ESSENTIEL", "PREMIUM"] as PlanKey[]).map((p) => (
@@ -88,6 +104,7 @@ export default async function SubscriptionPage() {
               className={cn(
                 "flex flex-col",
                 p === "PREMIUM" && "border-2 border-primary",
+                p === payPlan && "ring-2 ring-primary ring-offset-2 ring-offset-background",
               )}
             >
               <h2 className="flex items-center gap-1.5 text-base font-bold">

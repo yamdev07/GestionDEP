@@ -86,11 +86,16 @@ export async function login(
     };
   }
 
+  // Destination après connexion : on n'accepte qu'un chemin interne.
+  const rawNext = String(formData.get("next") ?? "");
+  const redirectTo =
+    rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/";
+
   try {
     await signIn("credentials", {
       email: formData.get("email"),
       password: formData.get("password"),
-      redirectTo: "/",
+      redirectTo,
     });
   } catch (error) {
     if (error instanceof AuthError) {
