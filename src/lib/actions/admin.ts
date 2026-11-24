@@ -6,6 +6,7 @@ import bcrypt from "bcryptjs";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { isAdmin } from "@/lib/admin";
+import { CURRENCY_CODES } from "@/lib/currencies";
 import type { ActionResult } from "@/lib/actions/transactions";
 
 async function requireAdmin() {
@@ -27,6 +28,42 @@ export async function deleteUser(userId: string): Promise<ActionResult> {
   } catch {
     return { ok: false, error: "Compte introuvable ou déjà supprimé." };
   }
+  revalidatePath("/admin");
+  return { ok: true };
+}
+
+const updateSchema = z.object({
+  userId: z.string().min(1),
+  name: z.string().trim().max(80).optional(),
+  currency: z.enum(CURRENCY_CODES),
+});
+
+/** Modifie le nom et la devise d'un compte. */
+export async function updateUserAdmin(
+  userId: string,
+  name: string,
+  currency: string,
+): Promise<ActionResult> {
+  await requireAdmin();
+
+  const parsed = updateSchema.safeParse({
+    userId,
+    name: name || undefined,
+    currency,
+  });
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalide" };
+  }
+
+  try {
+    await prisma.user.update({
+      where: { id: parsed.data.userId },
+      data: { name: parsed.data.name ?? null, currency: parsed.data.currency },
+    });
+  } catch {
+    return { ok: false, error: "Compte introuvable." };
+  }
+
   revalidatePath("/admin");
   return { ok: true };
 }
