@@ -81,7 +81,7 @@ export default async function StatsPage() {
         <h1 className="text-2xl font-bold">Statistiques</h1>
 
         <div className="grid grid-cols-3 gap-3">
-          <MiniStat label="Revenus" value={formatMoney(income, currency)} tone="success" />
+          <MiniStat label="Entrées" value={formatMoney(income, currency)} tone="success" />
           <MiniStat label="Dépenses" value={formatMoney(expense, currency)} tone="danger" />
           <MiniStat
             label="Solde"
@@ -108,7 +108,7 @@ export default async function StatsPage() {
                       minHeight: m.income > 0 ? 4 : 0,
                       backgroundColor: "var(--success)",
                     }}
-                    title={`Revenus : ${formatMoney(m.income, currency)}`}
+                    title={`Entrées : ${formatMoney(m.income, currency)}`}
                   />
                   <div
                     className="w-1/2 rounded-t-md"
@@ -127,7 +127,7 @@ export default async function StatsPage() {
           <div className="mt-4 flex items-center justify-center gap-5 text-xs text-muted">
             <span className="flex items-center gap-1.5">
               <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "var(--success)" }} />
-              Revenus
+              Entrées
             </span>
             <span className="flex items-center gap-1.5">
               <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "var(--danger)" }} />

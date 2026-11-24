@@ -112,7 +112,7 @@ export function AddTransactionForm({
               : "text-muted hover:text-foreground",
           )}
         >
-          <ArrowUpCircle className="h-4 w-4" /> Revenu
+          <ArrowUpCircle className="h-4 w-4" /> Entrée
         </button>
       </div>
 
@@ -265,7 +265,7 @@ export function AddTransactionForm({
         ) : isEdit ? (
           "Enregistrer les modifications"
         ) : isIncome ? (
-          "Ajouter le revenu"
+          "Ajouter l'entrée"
         ) : (
           "Ajouter la dépense"
         )}

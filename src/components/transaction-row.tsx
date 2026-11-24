@@ -53,9 +53,9 @@ export function TransactionRow({
     });
   }
 
-  const title = tx.note || tx.categoryName || (isIncome ? "Revenu" : "Dépense");
+  const title = tx.note || tx.categoryName || (isIncome ? "Entrée" : "Dépense");
   const subtitle = isIncome
-    ? `Revenu · ${dateLabel}`
+    ? `Entrée · ${dateLabel}`
     : `${tx.categoryName ?? "Sans catégorie"} · ${dateLabel}`;
 
   const amountStr = formatMoney(tx.amountCents, currency);

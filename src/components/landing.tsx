@@ -10,13 +10,13 @@ import {
   Check,
   Crown,
 } from "lucide-react";
-import { PLANS, FREE_LIMITS, TRIAL_DAYS } from "@/lib/plans";
+import { PLANS, FREE_LIMITS } from "@/lib/plans";
 import { formatMoney } from "@/lib/utils";
 
 const FEATURES = [
   {
     icon: TrendingUp,
-    title: "Revenus & dépenses",
+    title: "Entrées & dépenses",
     text: "Enregistrez chaque entrée et sortie d'argent, et suivez votre solde en temps réel.",
   },
   {
@@ -32,7 +32,7 @@ const FEATURES = [
   {
     icon: PieChart,
     title: "Statistiques claires",
-    text: "Répartition des dépenses, tendance sur 6 mois, revenus vs dépenses.",
+    text: "Répartition des dépenses, tendance sur 6 mois, entrées vs dépenses.",
   },
   {
     icon: Smartphone,
@@ -119,7 +119,7 @@ export function Landing() {
           </span>
         </h1>
         <p className="mx-auto mt-4 max-w-xl text-base text-muted sm:text-lg">
-          MonBudget vous aide à suivre vos revenus et dépenses, gérer vos
+          MonBudget vous aide à suivre vos entrées et dépenses, gérer vos
           comptes (espèces, Mobile Money, banque), épargner et visualiser où
           part votre argent — le tout en Francs CFA.
         </p>
@@ -146,7 +146,7 @@ export function Landing() {
           <p className="mt-1 text-4xl font-bold tracking-tight">85 500 F CFA</p>
           <div className="mt-5 flex gap-3 text-sm">
             <span className="flex-1 rounded-xl bg-white/15 px-3 py-2">
-              <span className="block text-white/70">Revenus</span>
+              <span className="block text-white/70">Entrées</span>
               <span className="font-semibold">+135 000</span>
             </span>
             <span className="flex-1 rounded-xl bg-white/15 px-3 py-2">
@@ -182,8 +182,7 @@ export function Landing() {
       <section id="tarifs" className="mx-auto max-w-5xl px-4 pb-16 scroll-mt-6">
         <h2 className="mb-2 text-center text-2xl font-bold">Des tarifs simples</h2>
         <p className="mb-8 text-center text-muted">
-          {TRIAL_DAYS} jours d&apos;essai Premium offerts à l&apos;inscription, puis
-          le plan de ton choix.
+          Commence gratuitement, passe à un plan payant quand tu veux.
         </p>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {PRICING.map(({ key, features, highlight }) => {
@@ -263,7 +262,7 @@ export function Landing() {
       </section>
 
       <footer className="border-t border-border py-6 text-center text-sm text-muted">
-        MonBudget — Suivez vos revenus et dépenses en quelques clics.
+        MonBudget — Suivez vos entrées et dépenses en quelques clics.
       </footer>
     </main>
   );
