@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Tag, ListOrdered, Wallet, ShieldCheck, PiggyBank, ChevronRight } from "lucide-react";
+import { Tag, ListOrdered, Wallet, ShieldCheck, PiggyBank, Crown, ChevronRight } from "lucide-react";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { isAdmin } from "@/lib/admin";
+import { getPlanStatus } from "@/lib/subscription";
 import { AppShell } from "@/components/app-shell";
 import { ProfileForm } from "@/components/profile-form";
 import { PasswordForm } from "@/components/password-form";
@@ -23,6 +24,7 @@ export default async function ProfilePage() {
 
   const initial = (user.name || user.email || "?").slice(0, 1).toUpperCase();
   const admin = isAdmin(session.user.email);
+  const plan = await getPlanStatus(userId);
 
   return (
     <AppShell>
@@ -56,6 +58,26 @@ export default async function ProfilePage() {
 
         {/* Raccourcis */}
         <Card className="p-0">
+          <Link
+            href="/abonnement"
+            className="flex items-center gap-3 px-5 py-4 transition hover:bg-surface-muted"
+          >
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Crown className="h-5 w-5" />
+            </span>
+            <span className="flex-1 font-medium">Abonnement</span>
+            <span
+              className={
+                plan.premium
+                  ? "rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary"
+                  : "rounded-full bg-surface-muted px-2.5 py-0.5 text-xs font-medium text-muted"
+              }
+            >
+              {plan.premium ? "Premium" : "Gratuit"}
+            </span>
+            <ChevronRight className="h-5 w-5 text-muted" />
+          </Link>
+          <div className="border-t border-border" />
           {admin && (
             <>
               <LinkRow
