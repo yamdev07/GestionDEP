@@ -34,6 +34,7 @@ services:
       AUTH_SECRET: ${AUTH_SECRET:?Definis AUTH_SECRET dans .env}
       AUTH_URL: https://${DOMAIN:?Definis DOMAIN dans .env}
       AUTH_TRUST_HOST: "true"
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
       NODE_ENV: production
     # Exposé UNIQUEMENT sur la boucle locale : seul le proxy du serveur y accède.
     # Port hôte réglable via APP_PORT (.env) si 3000 est déjà pris.

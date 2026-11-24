@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Tag, ListOrdered, Wallet, ChevronRight } from "lucide-react";
+import { Tag, ListOrdered, Wallet, ShieldCheck, ChevronRight } from "lucide-react";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { isAdmin } from "@/lib/admin";
 import { AppShell } from "@/components/app-shell";
 import { ProfileForm } from "@/components/profile-form";
 import { PasswordForm } from "@/components/password-form";
@@ -21,6 +22,7 @@ export default async function ProfilePage() {
   if (!user) redirect("/login");
 
   const initial = (user.name || user.email || "?").slice(0, 1).toUpperCase();
+  const admin = isAdmin(session.user.email);
 
   return (
     <AppShell>
@@ -54,6 +56,16 @@ export default async function ProfilePage() {
 
         {/* Raccourcis */}
         <Card className="p-0">
+          {admin && (
+            <>
+              <LinkRow
+                href="/admin"
+                icon={<ShieldCheck className="h-5 w-5" />}
+                label="Administration"
+              />
+              <div className="border-t border-border" />
+            </>
+          )}
           <LinkRow href="/comptes" icon={<Wallet className="h-5 w-5" />} label="Comptes" />
           <div className="border-t border-border" />
           <LinkRow href="/categories" icon={<Tag className="h-5 w-5" />} label="Catégories" />

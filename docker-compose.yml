@@ -26,6 +26,7 @@ services:
       AUTH_SECRET: ${AUTH_SECRET:?Définis AUTH_SECRET dans un fichier .env à côté du docker-compose.yml}
       AUTH_URL: ${AUTH_URL:-http://localhost:3000}
       AUTH_TRUST_HOST: "true"
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
       NODE_ENV: production
     ports:
       - "3000:3000"
