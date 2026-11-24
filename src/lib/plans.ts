@@ -18,10 +18,10 @@ export const PLANS: Record<
  */
 export const SAAS_LAUNCH = new Date("2026-11-25T00:00:00Z");
 
-/** Limites du plan Gratuit (rang 0). */
+/** Limites du plan Gratuit (rang 0) — volontairement serrées pour inciter à passer payant. */
 export const FREE_LIMITS = {
   accounts: 1,
-  txPerMonth: 50,
+  txPerMonth: 10,
   goals: 1,
 };
 

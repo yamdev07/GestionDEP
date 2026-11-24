@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
-import { auth } from "@/auth";
+import { auth, signOut } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import type { ActionResult } from "@/lib/actions/transactions";
 import { CURRENCY_CODES } from "@/lib/currencies";
@@ -93,4 +93,43 @@ export async function changePassword(
   });
 
   return { ok: true };
+}
+
+const deleteInput = z.object({
+  password: z.string().min(1, "Mot de passe requis"),
+});
+
+/**
+ * Supprime DÉFINITIVEMENT le compte de l'utilisateur connecté et toutes ses
+ * données (cascade), après confirmation par mot de passe, puis le déconnecte.
+ */
+export async function deleteMyAccount(
+  _prev: ActionResult | undefined,
+  formData: FormData,
+): Promise<ActionResult> {
+  const userId = await requireUserId();
+
+  const parsed = deleteInput.safeParse({ password: formData.get("password") });
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalide" };
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { passwordHash: true },
+  });
+  if (!user) return { ok: false, error: "Compte introuvable" };
+
+  const valid = await bcrypt.compare(parsed.data.password, user.passwordHash);
+  if (!valid) {
+    return { ok: false, error: "Mot de passe incorrect" };
+  }
+
+  // Les relations (opérations, comptes, budgets, épargne, abonnements…) sont
+  // supprimées en cascade (onDelete: Cascade dans le schéma).
+  await prisma.user.delete({ where: { id: userId } });
+
+  // Déconnexion + retour à l'accueil (lève une redirection : on la laisse remonter).
+  await signOut({ redirectTo: "/" });
+  return { ok: true }; // normalement inatteignable
 }

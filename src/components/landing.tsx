@@ -10,13 +10,13 @@ import {
   Check,
   Crown,
 } from "lucide-react";
-import { PLANS } from "@/lib/plans";
+import { PLANS, FREE_LIMITS } from "@/lib/plans";
 import { formatMoney } from "@/lib/utils";
 
 const FEATURES = [
   {
     icon: TrendingUp,
-    title: "Revenus & dépenses",
+    title: "Entrées & dépenses",
     text: "Enregistrez chaque entrée et sortie d'argent, et suivez votre solde en temps réel.",
   },
   {
@@ -32,7 +32,7 @@ const FEATURES = [
   {
     icon: PieChart,
     title: "Statistiques claires",
-    text: "Répartition des dépenses, tendance sur 6 mois, revenus vs dépenses.",
+    text: "Répartition des dépenses, tendance sur 6 mois, entrées vs dépenses.",
   },
   {
     icon: Smartphone,
@@ -53,7 +53,11 @@ const PRICING: {
 }[] = [
   {
     key: "GRATUIT",
-    features: ["1 portefeuille", "50 opérations / mois", "1 objectif d'épargne"],
+    features: [
+      `${FREE_LIMITS.accounts} portefeuille`,
+      `${FREE_LIMITS.txPerMonth} opérations / mois`,
+      `${FREE_LIMITS.goals} objectif d'épargne`,
+    ],
   },
   {
     key: "ESSENTIEL",
@@ -115,7 +119,7 @@ export function Landing() {
           </span>
         </h1>
         <p className="mx-auto mt-4 max-w-xl text-base text-muted sm:text-lg">
-          MonBudget vous aide à suivre vos revenus et dépenses, gérer vos
+          MonBudget vous aide à suivre vos entrées et dépenses, gérer vos
           comptes (espèces, Mobile Money, banque), épargner et visualiser où
           part votre argent — le tout en Francs CFA.
         </p>
@@ -142,7 +146,7 @@ export function Landing() {
           <p className="mt-1 text-4xl font-bold tracking-tight">85 500 F CFA</p>
           <div className="mt-5 flex gap-3 text-sm">
             <span className="flex-1 rounded-xl bg-white/15 px-3 py-2">
-              <span className="block text-white/70">Revenus</span>
+              <span className="block text-white/70">Entrées</span>
               <span className="font-semibold">+135 000</span>
             </span>
             <span className="flex-1 rounded-xl bg-white/15 px-3 py-2">
@@ -156,7 +160,7 @@ export function Landing() {
       {/* Fonctionnalités */}
       <section className="mx-auto max-w-5xl px-4 pb-16">
         <h2 className="mb-6 text-center text-2xl font-bold">
-          Tout ce qu'il faut pour gérer votre budget
+          Tout ce qu&apos;il faut pour gérer votre budget
         </h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map((f) => (
@@ -221,7 +225,7 @@ export function Landing() {
                   ))}
                 </ul>
                 <Link
-                  href="/register"
+                  href={key === "GRATUIT" ? "/register" : `/register?plan=${key}`}
                   className={
                     "mt-5 flex h-11 items-center justify-center gap-2 rounded-xl font-semibold transition active:scale-[0.99] " +
                     (highlight || key === "PREMIUM"
@@ -258,7 +262,7 @@ export function Landing() {
       </section>
 
       <footer className="border-t border-border py-6 text-center text-sm text-muted">
-        MonBudget — Suivez vos revenus et dépenses en quelques clics.
+        MonBudget — Suivez vos entrées et dépenses en quelques clics.
       </footer>
     </main>
   );

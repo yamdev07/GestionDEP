@@ -121,7 +121,7 @@ export default async function DashboardPage() {
         {/* Revenus / Dépenses */}
         <div className="grid grid-cols-2 gap-3">
           <SummaryCard
-            label="Revenus"
+            label="Entrées"
             value={formatMoney(incomeCents, currency)}
             tone="success"
             icon={<ArrowUpRight className="h-5 w-5" />}

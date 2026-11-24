@@ -10,7 +10,7 @@ const geistSans = Geist({
 
 export const metadata: Metadata = {
   title: "MonBudget",
-  description: "Suivez vos revenus et dépenses en quelques clics.",
+  description: "Suivez vos entrées et dépenses en quelques clics.",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,

@@ -3,14 +3,18 @@ import { Crown, Check } from "lucide-react";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getPlanStatus } from "@/lib/subscription";
-import { PLANS, PLAN_LABELS, type PlanKey } from "@/lib/plans";
+import { PLANS, PLAN_LABELS, FREE_LIMITS, type PlanKey } from "@/lib/plans";
 import { AppShell } from "@/components/app-shell";
 import { SubscribeButton } from "@/components/subscribe-button";
 import { Card } from "@/components/ui";
 import { formatMoney, cn } from "@/lib/utils";
 
 const PLAN_FEATURES: Record<PlanKey, string[]> = {
-  GRATUIT: ["1 portefeuille", "50 opérations / mois", "1 objectif d'épargne"],
+  GRATUIT: [
+    `${FREE_LIMITS.accounts} portefeuille`,
+    `${FREE_LIMITS.txPerMonth} opérations / mois`,
+    `${FREE_LIMITS.goals} objectif d'épargne`,
+  ],
   ESSENTIEL: [
     "Portefeuilles illimités",
     "Opérations illimitées",
@@ -26,10 +30,18 @@ const PLAN_FEATURES: Record<PlanKey, string[]> = {
   ],
 };
 
-export default async function SubscriptionPage() {
+export default async function SubscriptionPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ pay?: string }>;
+}) {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
   const userId = session.user.id;
+
+  const { pay } = await searchParams;
+  const payPlan: PlanKey | null =
+    pay === "ESSENTIEL" || pay === "PREMIUM" ? pay : null;
 
   const [user, status, history] = await Promise.all([
     prisma.user.findUnique({ where: { id: userId }, select: { currency: true } }),
@@ -44,6 +56,8 @@ export default async function SubscriptionPage() {
 
   const currency = user.currency;
   const currentLabel = PLAN_LABELS[status.plan] ?? "Gratuit";
+  // On lance le paiement direct sauf si l'utilisateur possède DÉJÀ ce plan via un vrai paiement.
+  const autoPay = payPlan !== null && !(status.plan === payPlan && !status.trial);
 
   return (
     <AppShell>
@@ -80,6 +94,14 @@ export default async function SubscriptionPage() {
           )}
         </Card>
 
+        {/* Redirection directe vers le paiement quand un plan payant est choisi */}
+        {autoPay && payPlan && (
+          <div className="rounded-xl border border-primary bg-primary/10 px-4 py-3 text-sm font-medium text-primary">
+            Redirection vers le paiement <strong>{PLAN_LABELS[payPlan]}</strong>…
+            Si rien ne se passe, clique sur « Payer » ci-dessous.
+          </div>
+        )}
+
         {/* Choix de plan */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {(["ESSENTIEL", "PREMIUM"] as PlanKey[]).map((p) => (
@@ -88,6 +110,7 @@ export default async function SubscriptionPage() {
               className={cn(
                 "flex flex-col",
                 p === "PREMIUM" && "border-2 border-primary",
+                p === payPlan && "ring-2 ring-primary ring-offset-2 ring-offset-background",
               )}
             >
               <h2 className="flex items-center gap-1.5 text-base font-bold">
@@ -109,7 +132,12 @@ export default async function SubscriptionPage() {
                 ))}
               </ul>
               <div className="mt-4 space-y-2">
-                <SubscribeButton plan={p} cycle="MENSUEL" label={`Payer ${formatMoney(PLANS[p].monthlyCents, currency)}/mois`} />
+                <SubscribeButton
+                  plan={p}
+                  cycle="MENSUEL"
+                  label={`Payer ${formatMoney(PLANS[p].monthlyCents, currency)}/mois`}
+                  autoStart={autoPay && p === payPlan}
+                />
                 <SubscribeButton plan={p} cycle="ANNUEL" variant="outline" label={`Annuel · ${formatMoney(PLANS[p].annualCents, currency)}`} />
               </div>
             </Card>

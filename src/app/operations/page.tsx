@@ -75,7 +75,7 @@ export default async function OperationsPage({
           <FilterChip
             href="/operations?f=income"
             active={filter === "income"}
-            label="Revenus"
+            label="Entrées"
           />
           <FilterChip
             href="/operations?f=expense"

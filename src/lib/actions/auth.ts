@@ -14,6 +14,11 @@ const registerSchema = z.object({
   password: z.string().min(6, "6 caractères minimum"),
 });
 
+/** Valide une destination de redirection interne (évite les redirections ouvertes). */
+function safeInternalPath(raw: string): string {
+  return raw.startsWith("/") && !raw.startsWith("//") ? raw : "/";
+}
+
 export type RegisterState = { error?: string } | undefined;
 
 // Catégories créées automatiquement pour chaque nouveau compte.
@@ -51,6 +56,8 @@ export async function registerUser(
 
   const passwordHash = await bcrypt.hash(password, 10);
 
+  // Modèle freemium : le nouveau compte démarre en Gratuit (bridé). Premium
+  // uniquement après un paiement réussi.
   await prisma.user.create({
     data: {
       name,
@@ -61,7 +68,19 @@ export async function registerUser(
     },
   });
 
-  return undefined; // succès
+  // Connexion automatique puis redirection (le nouveau ne se reconnecte pas).
+  const redirectTo = safeInternalPath(String(formData.get("next") ?? ""));
+  try {
+    await signIn("credentials", { email, password, redirectTo });
+  } catch (error) {
+    if (error instanceof AuthError) {
+      // Compte bien créé, mais la connexion auto a échoué : on renvoie vers /login.
+      return { error: "Compte créé. Connecte-toi pour continuer." };
+    }
+    throw error; // redirection (NEXT_REDIRECT) : on laisse remonter.
+  }
+
+  return undefined; // succès (normalement inatteignable : signIn redirige)
 }
 
 export type LoginState = { error?: string } | undefined;
@@ -86,11 +105,16 @@ export async function login(
     };
   }
 
+  // Destination après connexion : on n'accepte qu'un chemin interne.
+  const rawNext = String(formData.get("next") ?? "");
+  const redirectTo =
+    rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/";
+
   try {
     await signIn("credentials", {
       email: formData.get("email"),
       password: formData.get("password"),
-      redirectTo: "/",
+      redirectTo,
     });
   } catch (error) {
     if (error instanceof AuthError) {

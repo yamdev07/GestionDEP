@@ -10,6 +10,7 @@ import { AppShell } from "@/components/app-shell";
 import { ProfileForm } from "@/components/profile-form";
 import { PasswordForm } from "@/components/password-form";
 import { SignOutButton } from "@/components/sign-out-button";
+import { DeleteAccountForm } from "@/components/delete-account-form";
 import { Card } from "@/components/ui";
 
 export default async function ProfilePage() {
@@ -105,6 +106,15 @@ export default async function ProfilePage() {
         <div className="pt-1">
           <SignOutButton />
         </div>
+
+        {/* Zone de danger */}
+        <Card className="border-danger/30">
+          <h2 className="mb-1 text-base font-bold text-danger">Zone de danger</h2>
+          <p className="mb-3 text-sm text-muted">
+            Supprimer ton compte efface définitivement toutes tes données.
+          </p>
+          <DeleteAccountForm />
+        </Card>
       </div>
     </AppShell>
   );
