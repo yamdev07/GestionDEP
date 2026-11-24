@@ -9,6 +9,7 @@ import {
   type ActionResult,
 } from "@/lib/actions/transactions";
 import { Button, Input } from "@/components/ui";
+import { UpgradeNotice } from "@/components/upgrade-notice";
 import { cn, toDateInputValue, currencySymbol } from "@/lib/utils";
 
 type Cat = { id: string; name: string; color: string };
@@ -244,11 +245,14 @@ export function AddTransactionForm({
         </div>
       </div>
 
-      {state?.error && (
-        <p className="rounded-xl bg-danger/10 px-3 py-2 text-sm text-danger">
-          {state.error}
-        </p>
-      )}
+      {state?.error &&
+        (state.upgrade ? (
+          <UpgradeNotice message={state.error} />
+        ) : (
+          <p className="rounded-xl bg-danger/10 px-3 py-2 text-sm text-danger">
+            {state.error}
+          </p>
+        ))}
 
       <Button
         type="submit"

@@ -50,7 +50,8 @@ export async function createGoal(
     if (count >= FREE_LIMITS.goals) {
       return {
         ok: false,
-        error: `Plan Gratuit limité à ${FREE_LIMITS.goals} objectif d'épargne. Passez à un plan payant.`,
+        upgrade: true,
+        error: `Tu as atteint la limite du plan Gratuit (${FREE_LIMITS.goals} objectif d'épargne).`,
       };
     }
   }

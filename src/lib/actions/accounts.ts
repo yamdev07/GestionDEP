@@ -50,7 +50,8 @@ export async function createAccount(
     if (count >= FREE_LIMITS.accounts) {
       return {
         ok: false,
-        error: `Plan Gratuit limité à ${FREE_LIMITS.accounts} portefeuille. Passez à un plan payant pour en ajouter.`,
+        upgrade: true,
+        error: `Tu as atteint la limite du plan Gratuit (${FREE_LIMITS.accounts} portefeuille).`,
       };
     }
   }

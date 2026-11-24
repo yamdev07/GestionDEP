@@ -4,6 +4,7 @@ import { useActionState, useEffect, useRef, useState, useTransition } from "reac
 import { Plus, Trash2 } from "lucide-react";
 import { createAccount, deleteAccount } from "@/lib/actions/accounts";
 import type { ActionResult } from "@/lib/actions/transactions";
+import { UpgradeNotice } from "@/components/upgrade-notice";
 import { ACCOUNT_TYPES, accountTypeIcon, accountTypeLabel } from "@/lib/account-types";
 import { Button, Card, Input } from "@/components/ui";
 import { CategoryIcon } from "@/components/category-icon";
@@ -112,11 +113,14 @@ export function AccountManager({
             </span>
           </div>
 
-          {state?.error && (
-            <p className="rounded-xl bg-danger/10 px-3 py-2 text-sm text-danger">
-              {state.error}
-            </p>
-          )}
+          {state?.error &&
+            (state.upgrade ? (
+              <UpgradeNotice message={state.error} />
+            ) : (
+              <p className="rounded-xl bg-danger/10 px-3 py-2 text-sm text-danger">
+                {state.error}
+              </p>
+            ))}
 
           <Button type="submit" disabled={pending} className="w-full sm:w-auto">
             <Plus className="h-4 w-4" />

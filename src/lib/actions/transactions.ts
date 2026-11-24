@@ -13,7 +13,7 @@ async function requireUserId(): Promise<string> {
   return session.user.id;
 }
 
-export type ActionResult = { ok: boolean; error?: string };
+export type ActionResult = { ok: boolean; error?: string; upgrade?: boolean };
 
 function revalidateAll() {
   revalidatePath("/");
@@ -76,7 +76,8 @@ export async function createTransaction(
     if (count >= FREE_LIMITS.txPerMonth) {
       return {
         ok: false,
-        error: `Plan Gratuit limité à ${FREE_LIMITS.txPerMonth} opérations/mois. Passez à un plan payant pour en ajouter plus.`,
+        upgrade: true,
+        error: `Tu as atteint la limite du plan Gratuit (${FREE_LIMITS.txPerMonth} opérations/mois).`,
       };
     }
   }

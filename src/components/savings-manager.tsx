@@ -4,6 +4,7 @@ import { useActionState, useEffect, useRef, useState, useTransition } from "reac
 import { Plus, Trash2, PiggyBank, Minus } from "lucide-react";
 import { createGoal, adjustGoal, deleteGoal } from "@/lib/actions/savings";
 import type { ActionResult } from "@/lib/actions/transactions";
+import { UpgradeNotice } from "@/components/upgrade-notice";
 import { useConfirm } from "@/components/confirm-dialog";
 import { Button, Card, Input } from "@/components/ui";
 import { cn, formatMoney, currencySymbol } from "@/lib/utils";
@@ -81,9 +82,12 @@ export function SavingsManager({
             ))}
           </div>
 
-          {state?.error && (
-            <p className="rounded-xl bg-danger/10 px-3 py-2 text-sm text-danger">{state.error}</p>
-          )}
+          {state?.error &&
+            (state.upgrade ? (
+              <UpgradeNotice message={state.error} />
+            ) : (
+              <p className="rounded-xl bg-danger/10 px-3 py-2 text-sm text-danger">{state.error}</p>
+            ))}
 
           <Button type="submit" disabled={pending} className="w-full sm:w-auto">
             <Plus className="h-4 w-4" />
