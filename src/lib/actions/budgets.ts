@@ -5,6 +5,7 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { parseAmountToCents } from "@/lib/utils";
+import { getPlanStatus } from "@/lib/subscription";
 import type { ActionResult } from "@/lib/actions/transactions";
 
 async function requireUserId(): Promise<string> {
@@ -24,6 +25,14 @@ export async function setBudget(
   formData: FormData,
 ): Promise<ActionResult> {
   const userId = await requireUserId();
+
+  const { premium } = await getPlanStatus(userId);
+  if (!premium) {
+    return {
+      ok: false,
+      error: "Les budgets sont réservés au plan Premium.",
+    };
+  }
 
   const parsed = budgetInput.safeParse({
     categoryId: formData.get("categoryId"),

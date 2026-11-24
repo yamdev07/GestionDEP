@@ -5,6 +5,7 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { parseAmountToCents } from "@/lib/utils";
+import { getPlanStatus, FREE_LIMITS } from "@/lib/subscription";
 import type { ActionResult } from "@/lib/actions/transactions";
 
 async function requireUserId(): Promise<string> {
@@ -41,6 +42,17 @@ export async function createGoal(
   });
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalide" };
+  }
+
+  const { premium } = await getPlanStatus(userId);
+  if (!premium) {
+    const count = await prisma.savingsGoal.count({ where: { userId } });
+    if (count >= FREE_LIMITS.goals) {
+      return {
+        ok: false,
+        error: `Plan Gratuit limité à ${FREE_LIMITS.goals} objectif d'épargne. Passez Premium.`,
+      };
+    }
   }
 
   const targetCents = parsed.data.target

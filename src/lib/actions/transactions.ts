@@ -5,6 +5,7 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { parseAmountToCents } from "@/lib/utils";
+import { getPlanStatus, FREE_LIMITS, monthRange } from "@/lib/subscription";
 
 async function requireUserId(): Promise<string> {
   const session = await auth();
@@ -64,6 +65,21 @@ export async function createTransaction(
   formData: FormData,
 ): Promise<ActionResult> {
   const userId = await requireUserId();
+
+  // Limite du plan Gratuit : nombre d'opérations par mois.
+  const { premium } = await getPlanStatus(userId);
+  if (!premium) {
+    const { start, end } = monthRange();
+    const count = await prisma.transaction.count({
+      where: { userId, date: { gte: start, lt: end } },
+    });
+    if (count >= FREE_LIMITS.txPerMonth) {
+      return {
+        ok: false,
+        error: `Plan Gratuit limité à ${FREE_LIMITS.txPerMonth} opérations/mois. Passez Premium pour en ajouter plus.`,
+      };
+    }
+  }
 
   const parsed = transactionInput.safeParse({
     type: formData.get("type") || undefined,

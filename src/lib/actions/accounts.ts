@@ -5,6 +5,7 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { parseAmountToCents } from "@/lib/utils";
+import { getPlanStatus, FREE_LIMITS } from "@/lib/subscription";
 import type { ActionResult } from "@/lib/actions/transactions";
 
 async function requireUserId(): Promise<string> {
@@ -41,6 +42,17 @@ export async function createAccount(
   });
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalide" };
+  }
+
+  const { premium } = await getPlanStatus(userId);
+  if (!premium) {
+    const count = await prisma.account.count({ where: { userId } });
+    if (count >= FREE_LIMITS.accounts) {
+      return {
+        ok: false,
+        error: `Plan Gratuit limité à ${FREE_LIMITS.accounts} portefeuille. Passez Premium pour en ajouter.`,
+      };
+    }
   }
 
   const initialBalanceCents = parsed.data.initialBalance
