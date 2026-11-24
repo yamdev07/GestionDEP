@@ -1,0 +1,43 @@
+# Déploiement DERRIÈRE un reverse proxy existant (Apache/Nginx/panneau OVH…)
+# qui occupe déjà les ports 80/443 et gère le HTTPS.
+#
+# Ici : PAS de Caddy. L'app écoute en local sur 127.0.0.1:3000, et c'est ton
+# proxy existant qui redirige https://gestiondep.sellvantix.com -> 127.0.0.1:3000.
+#
+# Prérequis : fichier .env avec DOMAIN, DB_PASSWORD, AUTH_SECRET.
+# Lancement :
+#   docker compose -f docker-compose.proxy.yml up -d --build
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: gestion
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Definis DB_PASSWORD dans .env}
+      POSTGRES_DB: gestion_depenses
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gestion -d gestion_depenses"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://gestion:${DB_PASSWORD}@db:5432/gestion_depenses?schema=public
+      AUTH_SECRET: ${AUTH_SECRET:?Definis AUTH_SECRET dans .env}
+      AUTH_URL: https://${DOMAIN:?Definis DOMAIN dans .env}
+      AUTH_TRUST_HOST: "true"
+      NODE_ENV: production
+    # Exposé UNIQUEMENT sur la boucle locale : seul le proxy du serveur y accède.
+    ports:
+      - "127.0.0.1:3000:3000"
+
+volumes:
+  db_data:

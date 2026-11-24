@@ -81,6 +81,39 @@ docker compose -f docker-compose.prod.yml up -d --build
 
 Le schéma de base est synchronisé automatiquement au démarrage.
 
+## Variante : derrière un reverse proxy existant
+
+Si le serveur a déjà un proxy (Apache/Nginx/panneau) sur les ports 80/443, on
+n'utilise pas Caddy. L'app écoute en local et le proxy existant la publie.
+
+```sh
+docker compose -f docker-compose.proxy.yml up -d --build
+```
+
+L'app est alors accessible sur `127.0.0.1:3000`. Configure ton proxy pour
+rediriger `https://gestiondep.sellvantix.com` vers `http://127.0.0.1:3000`.
+
+Exemple de bloc Nginx :
+
+```nginx
+server {
+    server_name gestiondep.sellvantix.com;
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+    # HTTPS (certbot/Let's Encrypt) géré par ta config proxy existante.
+}
+```
+
+Vérifier ce qui occupe 80/443 avant de choisir :
+
+```sh
+sudo ss -tlnp | grep -E ':80|:443' || echo "80/443 libres -> docker-compose.prod.yml"
+```
+
 ## Développement local
 
 En local, rien ne change : on continue avec le fichier standard.
