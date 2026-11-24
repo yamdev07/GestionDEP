@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { ensureDefaultAccount } from "@/lib/actions/accounts";
 import { accountTypeIcon } from "@/lib/account-types";
 import { AppShell } from "@/components/app-shell";
+import { Landing } from "@/components/landing";
 import { BalanceCard } from "@/components/balance-card";
 import { CategoryChart } from "@/components/category-chart";
 import { CategoryIcon } from "@/components/category-icon";
@@ -19,7 +20,8 @@ import { toTransactionView } from "@/lib/views";
 
 export default async function DashboardPage() {
   const session = await auth();
-  if (!session?.user?.id) redirect("/login");
+  // Visiteur non connecté : page de présentation publique.
+  if (!session?.user?.id) return <Landing />;
   const userId = session.user.id;
 
   const user = await prisma.user.findUnique({
