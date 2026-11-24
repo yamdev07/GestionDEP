@@ -24,6 +24,25 @@ enum AccountType {
   OTHER        // Autre
 }
 
+/// Plan d'abonnement.
+enum Plan {
+  GRATUIT
+  PREMIUM
+}
+
+/// Cycle de facturation.
+enum BillingCycle {
+  MENSUEL
+  ANNUEL
+}
+
+/// Statut d'une période d'abonnement.
+enum SubStatus {
+  ACTIVE
+  EXPIRED
+  CANCELED
+}
+
 /// Un utilisateur. Chaque utilisateur ne voit QUE ses propres données.
 model User {
   id           String     @id @default(cuid())
@@ -31,14 +50,34 @@ model User {
   name         String?
   passwordHash String
   currency     String     @default("XOF") // devise affichée (XOF, XAF, EUR, USD, ...)
+  premiumUntil DateTime?               // Premium actif tant que cette date est future
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
-  categories   Category[]
-  transactions Transaction[]
-  budgets      Budget[]
-  accounts     Account[]
-  savingsGoals SavingsGoal[]
+  categories    Category[]
+  transactions  Transaction[]
+  budgets       Budget[]
+  accounts      Account[]
+  savingsGoals  SavingsGoal[]
+  subscriptions Subscription[]
+}
+
+/// Historique des abonnements : une ligne par activation / renouvellement / changement.
+model Subscription {
+  id         String       @id @default(cuid())
+  userId     String
+  plan       Plan         @default(PREMIUM)
+  cycle      BillingCycle
+  priceCents Int
+  startedAt  DateTime     @default(now())
+  endsAt     DateTime
+  status     SubStatus    @default(ACTIVE)
+  note       String       @default("") // ex: "Activé par l'admin", "Offert"
+  createdAt  DateTime     @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 /// Objectif d'épargne : ce que l'utilisateur met de côté, avec un but optionnel.
