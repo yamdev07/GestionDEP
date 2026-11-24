@@ -36,8 +36,9 @@ services:
       AUTH_TRUST_HOST: "true"
       NODE_ENV: production
     # Exposé UNIQUEMENT sur la boucle locale : seul le proxy du serveur y accède.
+    # Port hôte réglable via APP_PORT (.env) si 3000 est déjà pris.
     ports:
-      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:${APP_PORT:-3000}:3000"
 
 volumes:
   db_data:
