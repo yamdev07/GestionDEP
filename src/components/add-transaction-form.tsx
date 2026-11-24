@@ -79,6 +79,9 @@ export function AddTransactionForm({
 
   const symbol = currencySymbol(currency);
   const isIncome = type === "INCOME";
+  const selectedCat = categories.find((c) => c.id === categoryId);
+  const isOther =
+    !isIncome && selectedCat?.name?.trim().toLowerCase() === "autre";
 
   return (
     <form action={formAction} className="space-y-6">
@@ -203,6 +206,13 @@ export function AddTransactionForm({
         </div>
       )}
 
+      {/* Précision obligatoire quand la catégorie est « Autre » */}
+      {isOther && (
+        <p className="-mt-2 text-sm font-medium text-primary">
+          Catégorie « Autre » : précise de quoi il s&apos;agit ci-dessous.
+        </p>
+      )}
+
       {/* Note + date */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="relative">
@@ -211,8 +221,14 @@ export function AddTransactionForm({
             name="note"
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder={isIncome ? "Libellé (ex: Salaire)" : "Note (ex: Courses)"}
-            className="pl-9"
+            placeholder={
+              isIncome
+                ? "Libellé (ex: Salaire)"
+                : isOther
+                  ? "Préciser « Autre » (ex: Cadeau, Imprévu)"
+                  : "Note (ex: Courses)"
+            }
+            className={cn("pl-9", isOther && "border-primary ring-2 ring-primary/20")}
             maxLength={200}
           />
         </div>
