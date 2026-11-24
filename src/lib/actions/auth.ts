@@ -7,7 +7,6 @@ import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { signIn } from "@/auth";
 import { rateLimit, purgeExpired } from "@/lib/rate-limit";
-import { TRIAL_DAYS, TRIAL_PLAN } from "@/lib/plans";
 
 const registerSchema = z.object({
   name: z.string().trim().max(80).optional(),
@@ -57,33 +56,15 @@ export async function registerUser(
 
   const passwordHash = await bcrypt.hash(password, 10);
 
-  // Essai gratuit : le nouveau compte reçoit le plan d'essai pendant TRIAL_DAYS jours,
-  // puis bascule automatiquement en Gratuit (effectivePlan gère l'expiration).
-  const now = new Date();
-  const trialUntil = new Date(now.getTime() + TRIAL_DAYS * 86400000);
-
+  // Modèle freemium : le nouveau compte démarre en Gratuit (bridé). Premium
+  // uniquement après un paiement réussi.
   await prisma.user.create({
     data: {
       name,
       email,
       passwordHash,
-      plan: TRIAL_PLAN,
-      planUntil: trialUntil,
       categories: { create: DEFAULT_CATEGORIES },
       accounts: { create: [{ name: "Espèces", type: "CASH", color: "#6d28d9" }] },
-      subscriptions: {
-        create: [
-          {
-            plan: TRIAL_PLAN,
-            cycle: "MENSUEL",
-            priceCents: 0,
-            startedAt: now,
-            endsAt: trialUntil,
-            status: "ACTIVE",
-            note: `Essai gratuit ${TRIAL_DAYS} jours`,
-          },
-        ],
-      },
     },
   });
 

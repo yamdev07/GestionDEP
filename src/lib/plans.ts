@@ -18,13 +18,6 @@ export const PLANS: Record<
  */
 export const SAAS_LAUNCH = new Date("2026-11-25T00:00:00Z");
 
-/**
- * Essai gratuit : à l'inscription, tout nouveau compte reçoit le plan ci-dessous
- * pendant TRIAL_DAYS jours, puis bascule automatiquement en Gratuit (bridé).
- */
-export const TRIAL_DAYS = 3;
-export const TRIAL_PLAN: PlanKey = "PREMIUM";
-
 /** Limites du plan Gratuit (rang 0) — volontairement serrées pour inciter à passer payant. */
 export const FREE_LIMITS = {
   accounts: 1,

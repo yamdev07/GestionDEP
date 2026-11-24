@@ -87,11 +87,9 @@ export default async function SubscriptionPage({
             <p className="mt-3 text-sm text-white/85">
               {status.grandfathered
                 ? "Premium offert (membre des débuts) 🎉"
-                : status.trial
-                  ? `Essai gratuit — ${status.daysLeft} jour${status.daysLeft && status.daysLeft > 1 ? "s" : ""} restant${status.daysLeft && status.daysLeft > 1 ? "s" : ""}. Passe au paiement pour ne rien perdre.`
-                  : status.planUntil
-                    ? `Actif jusqu'au ${status.planUntil.toLocaleDateString("fr-FR")}`
-                    : "Actif"}
+                : status.planUntil
+                  ? `Actif jusqu'au ${status.planUntil.toLocaleDateString("fr-FR")}`
+                  : "Actif"}
             </p>
           )}
         </Card>
