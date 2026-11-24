@@ -108,12 +108,20 @@ export async function startCheckout(
     });
 
     const token = await tx.generateToken();
+    if (!token?.url) {
+      throw new Error("FedaPay n'a pas renvoyé d'URL de paiement.");
+    }
     return { ok: true, url: token.url };
-  } catch {
+  } catch (e) {
+    const detail =
+      (e as { errorMessage?: string })?.errorMessage ||
+      (e instanceof Error ? e.message : String(e));
+    // Visible dans le terminal du serveur pour diagnostiquer (clé, réseau, montant…).
+    console.error("[FedaPay] startCheckout a échoué:", detail, e);
     await prisma.payment
       .update({ where: { id: payment.id }, data: { status: "CANCELED" } })
       .catch(() => {});
-    return { ok: false, error: "Erreur lors de l'initialisation du paiement." };
+    return { ok: false, error: `Échec du paiement FedaPay : ${detail}` };
   }
 }
 
