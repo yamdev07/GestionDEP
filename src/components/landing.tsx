@@ -7,7 +7,11 @@ import {
   Smartphone,
   ShieldCheck,
   ArrowRight,
+  Check,
+  Crown,
 } from "lucide-react";
+import { PRICE_MONTHLY_CENTS, PRICE_ANNUAL_CENTS } from "@/lib/plans";
+import { formatMoney } from "@/lib/utils";
 
 const FEATURES = [
   {
@@ -87,10 +91,10 @@ export function Landing() {
         </p>
         <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link
-            href="/register"
+            href="#tarifs"
             className="gradient-primary flex h-12 w-full items-center justify-center gap-2 rounded-2xl px-6 text-base font-semibold text-white shadow-lg shadow-primary/25 transition active:scale-[0.99] sm:w-auto"
           >
-            Commencer gratuitement <ArrowRight className="h-5 w-5" />
+            Commencer <ArrowRight className="h-5 w-5" />
           </Link>
           <Link
             href="/login"
@@ -137,6 +141,81 @@ export function Landing() {
               <p className="mt-1 text-sm text-muted">{f.text}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Tarifs */}
+      <section id="tarifs" className="mx-auto max-w-3xl px-4 pb-16 scroll-mt-6">
+        <h2 className="mb-2 text-center text-2xl font-bold">Des tarifs simples</h2>
+        <p className="mb-7 text-center text-muted">
+          Commence gratuitement, passe Premium quand tu veux.
+        </p>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {/* Gratuit */}
+          <div className="flex flex-col rounded-3xl border border-border bg-surface p-6">
+            <h3 className="font-bold">Gratuit</h3>
+            <p className="mt-1 text-3xl font-extrabold">
+              {formatMoney(0, "XOF")}
+            </p>
+            <ul className="mt-4 flex-1 space-y-2 text-sm">
+              {[
+                "1 portefeuille",
+                "50 opérations / mois",
+                "1 objectif d'épargne",
+                "Suivi revenus & dépenses",
+              ].map((t) => (
+                <li key={t} className="flex items-center gap-2">
+                  <Check className="h-4 w-4 shrink-0 text-success" /> {t}
+                </li>
+              ))}
+            </ul>
+            <Link
+              href="/register"
+              className="mt-5 flex h-11 items-center justify-center rounded-xl border border-border font-medium transition hover:bg-surface-muted"
+            >
+              Commencer gratuitement
+            </Link>
+          </div>
+
+          {/* Premium */}
+          <div className="relative flex flex-col rounded-3xl border-2 border-primary bg-surface p-6">
+            <span className="absolute -top-3 left-6 rounded-full bg-primary px-3 py-0.5 text-xs font-semibold text-white">
+              Populaire
+            </span>
+            <h3 className="flex items-center gap-1.5 font-bold text-primary">
+              <Crown className="h-5 w-5" /> Premium
+            </h3>
+            <p className="mt-1 text-3xl font-extrabold">
+              {formatMoney(PRICE_MONTHLY_CENTS, "XOF")}
+              <span className="text-base font-medium text-muted"> / mois</span>
+            </p>
+            <p className="text-sm text-muted">
+              ou {formatMoney(PRICE_ANNUAL_CENTS, "XOF")} / an (2 mois offerts)
+            </p>
+            <ul className="mt-4 flex-1 space-y-2 text-sm">
+              {[
+                "Portefeuilles illimités",
+                "Opérations illimitées",
+                "Budgets par catégorie",
+                "Statistiques avancées",
+                "Objectifs d'épargne illimités",
+                "Export des données",
+              ].map((t) => (
+                <li key={t} className="flex items-center gap-2">
+                  <Check className="h-4 w-4 shrink-0 text-success" /> {t}
+                </li>
+              ))}
+            </ul>
+            <Link
+              href="/register"
+              className="gradient-primary mt-5 flex h-11 items-center justify-center gap-2 rounded-xl font-semibold text-white transition active:scale-[0.99]"
+            >
+              <Crown className="h-4 w-4" /> Passer Premium
+            </Link>
+            <p className="mt-2 text-center text-xs text-muted">
+              Paiement Mobile Money bientôt · activation après inscription
+            </p>
+          </div>
         </div>
       </section>
 
