@@ -26,11 +26,11 @@ export async function setBudget(
 ): Promise<ActionResult> {
   const userId = await requireUserId();
 
-  const { premium } = await getPlanStatus(userId);
-  if (!premium) {
+  const status = await getPlanStatus(userId);
+  if (status.rank < 1) {
     return {
       ok: false,
-      error: "Les budgets sont réservés au plan Premium.",
+      error: "Les budgets sont réservés aux plans payants (Essentiel ou Premium).",
     };
   }
 

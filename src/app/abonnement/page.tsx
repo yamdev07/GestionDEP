@@ -1,21 +1,30 @@
 import { redirect } from "next/navigation";
-import { Crown, Check, X } from "lucide-react";
+import { Crown, Check } from "lucide-react";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getPlanStatus } from "@/lib/subscription";
-import { PRICE_MONTHLY_CENTS, PRICE_ANNUAL_CENTS, PLAN_LABELS } from "@/lib/plans";
+import { PLANS, PLAN_LABELS, type PlanKey } from "@/lib/plans";
 import { AppShell } from "@/components/app-shell";
+import { SubscribeButton } from "@/components/subscribe-button";
 import { Card } from "@/components/ui";
-import { formatMoney } from "@/lib/utils";
+import { formatMoney, cn } from "@/lib/utils";
 
-const BENEFITS = [
-  { label: "Portefeuilles illimités", free: false },
-  { label: "Opérations illimitées", free: false },
-  { label: "Budgets par catégorie", free: false },
-  { label: "Statistiques avancées", free: false },
-  { label: "Objectifs d'épargne illimités", free: false },
-  { label: "Export des données", free: false },
-];
+const PLAN_FEATURES: Record<PlanKey, string[]> = {
+  GRATUIT: ["1 portefeuille", "50 opérations / mois", "1 objectif d'épargne"],
+  ESSENTIEL: [
+    "Portefeuilles illimités",
+    "Opérations illimitées",
+    "Objectifs illimités",
+    "Budgets par catégorie",
+    "Statistiques avancées",
+  ],
+  PREMIUM: [
+    "Tout l'Essentiel",
+    "Export des données",
+    "Partage familial (à venir)",
+    "Support prioritaire",
+  ],
+};
 
 export default async function SubscriptionPage() {
   const session = await auth();
@@ -23,10 +32,7 @@ export default async function SubscriptionPage() {
   const userId = session.user.id;
 
   const [user, status, history] = await Promise.all([
-    prisma.user.findUnique({
-      where: { id: userId },
-      select: { currency: true },
-    }),
+    prisma.user.findUnique({ where: { id: userId }, select: { currency: true } }),
     getPlanStatus(userId),
     prisma.subscription.findMany({
       where: { userId },
@@ -37,7 +43,7 @@ export default async function SubscriptionPage() {
   if (!user) redirect("/login");
 
   const currency = user.currency;
-  const premium = status.premium;
+  const currentLabel = PLAN_LABELS[status.plan] ?? "Gratuit";
 
   return (
     <AppShell>
@@ -45,11 +51,11 @@ export default async function SubscriptionPage() {
         <h1 className="text-2xl font-bold">Abonnement</h1>
 
         {/* Statut actuel */}
-        <Card className={premium ? "gradient-primary text-white" : ""}>
+        <Card className={status.rank >= 1 ? "gradient-primary text-white" : ""}>
           <div className="flex items-center gap-3">
             <span
               className={
-                premium
+                status.rank >= 1
                   ? "flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15"
                   : "flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary"
               }
@@ -57,71 +63,62 @@ export default async function SubscriptionPage() {
               <Crown className="h-6 w-6" />
             </span>
             <div>
-              <p className={premium ? "text-sm text-white/80" : "text-sm text-muted"}>
+              <p className={status.rank >= 1 ? "text-sm text-white/80" : "text-sm text-muted"}>
                 Plan actuel
               </p>
-              <p className="text-xl font-bold">
-                {premium ? "Premium" : "Gratuit"}
-              </p>
+              <p className="text-xl font-bold">{currentLabel}</p>
             </div>
           </div>
-          {premium && (
+          {status.rank >= 1 && (
             <p className="mt-3 text-sm text-white/85">
               {status.grandfathered
                 ? "Premium offert (membre des débuts) 🎉"
-                : status.premiumUntil
-                  ? `Actif jusqu'au ${status.premiumUntil.toLocaleDateString("fr-FR")}`
+                : status.planUntil
+                  ? `Actif jusqu'au ${status.planUntil.toLocaleDateString("fr-FR")}`
                   : "Actif"}
             </p>
           )}
         </Card>
 
-        {/* Offre Premium */}
-        {!premium && (
-          <Card>
-            <div className="mb-3 flex items-center gap-2">
-              <Crown className="h-5 w-5 text-primary" />
-              <h2 className="text-base font-bold">Passez Premium</h2>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-2xl border border-border p-4 text-center">
-                <p className="text-sm text-muted">Mensuel</p>
-                <p className="mt-1 text-xl font-bold">
-                  {formatMoney(PRICE_MONTHLY_CENTS, currency)}
-                </p>
-                <p className="text-xs text-muted">/ mois</p>
+        {/* Choix de plan */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {(["ESSENTIEL", "PREMIUM"] as PlanKey[]).map((p) => (
+            <Card
+              key={p}
+              className={cn(
+                "flex flex-col",
+                p === "PREMIUM" && "border-2 border-primary",
+              )}
+            >
+              <h2 className="flex items-center gap-1.5 text-base font-bold">
+                {p === "PREMIUM" && <Crown className="h-5 w-5 text-primary" />}
+                {PLANS[p].label}
+              </h2>
+              <p className="mt-1 text-2xl font-extrabold">
+                {formatMoney(PLANS[p].monthlyCents, currency)}
+                <span className="text-sm font-medium text-muted"> / mois</span>
+              </p>
+              <p className="text-xs text-muted">
+                ou {formatMoney(PLANS[p].annualCents, currency)} / an
+              </p>
+              <ul className="mt-3 flex-1 space-y-1.5 text-sm">
+                {PLAN_FEATURES[p].map((f) => (
+                  <li key={f} className="flex items-center gap-2">
+                    <Check className="h-4 w-4 shrink-0 text-success" /> {f}
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-4 space-y-2">
+                <SubscribeButton plan={p} cycle="MENSUEL" label={`Payer ${formatMoney(PLANS[p].monthlyCents, currency)}/mois`} />
+                <SubscribeButton plan={p} cycle="ANNUEL" variant="outline" label={`Annuel · ${formatMoney(PLANS[p].annualCents, currency)}`} />
               </div>
-              <div className="rounded-2xl border-2 border-primary p-4 text-center">
-                <p className="text-sm font-medium text-primary">Annuel</p>
-                <p className="mt-1 text-xl font-bold">
-                  {formatMoney(PRICE_ANNUAL_CENTS, currency)}
-                </p>
-                <p className="text-xs text-muted">/ an · 2 mois offerts</p>
-              </div>
-            </div>
-            <p className="mt-4 rounded-xl bg-surface-muted px-3 py-2 text-sm text-muted">
-              💡 Paiement par Mobile Money bientôt disponible. En attendant,
-              contacte l&apos;administrateur pour activer ton abonnement.
-            </p>
-          </Card>
-        )}
+            </Card>
+          ))}
+        </div>
 
-        {/* Avantages */}
-        <Card>
-          <h2 className="mb-3 text-base font-bold">Avantages Premium</h2>
-          <ul className="space-y-2">
-            {BENEFITS.map((b) => (
-              <li key={b.label} className="flex items-center gap-2 text-sm">
-                {premium ? (
-                  <Check className="h-4 w-4 shrink-0 text-success" />
-                ) : (
-                  <X className="h-4 w-4 shrink-0 text-muted" />
-                )}
-                <span className={premium ? "" : "text-muted"}>{b.label}</span>
-              </li>
-            ))}
-          </ul>
-        </Card>
+        <p className="rounded-xl bg-surface-muted px-3 py-2 text-center text-sm text-muted">
+          Paiement sécurisé par FedaPay (Mobile Money &amp; carte).
+        </p>
 
         {/* Historique */}
         <Card>

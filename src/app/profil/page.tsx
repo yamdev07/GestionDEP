@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { isAdmin } from "@/lib/admin";
 import { getPlanStatus } from "@/lib/subscription";
+import { PLAN_LABELS } from "@/lib/plans";
 import { AppShell } from "@/components/app-shell";
 import { ProfileForm } from "@/components/profile-form";
 import { PasswordForm } from "@/components/password-form";
@@ -68,12 +69,12 @@ export default async function ProfilePage() {
             <span className="flex-1 font-medium">Abonnement</span>
             <span
               className={
-                plan.premium
+                plan.rank >= 1
                   ? "rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary"
                   : "rounded-full bg-surface-muted px-2.5 py-0.5 text-xs font-medium text-muted"
               }
             >
-              {plan.premium ? "Premium" : "Gratuit"}
+              {PLAN_LABELS[plan.plan] ?? "Gratuit"}
             </span>
             <ChevronRight className="h-5 w-5 text-muted" />
           </Link>

@@ -36,6 +36,9 @@ services:
       AUTH_URL: https://${DOMAIN:?Definis DOMAIN dans .env}
       AUTH_TRUST_HOST: "true"
       ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      FEDAPAY_SECRET_KEY: ${FEDAPAY_SECRET_KEY:-}
+      FEDAPAY_ENVIRONMENT: ${FEDAPAY_ENVIRONMENT:-sandbox}
+      FEDAPAY_WEBHOOK_SECRET: ${FEDAPAY_WEBHOOK_SECRET:-}
       NODE_ENV: production
     expose:
       - "3000"

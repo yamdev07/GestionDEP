@@ -44,13 +44,13 @@ export async function createAccount(
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalide" };
   }
 
-  const { premium } = await getPlanStatus(userId);
-  if (!premium) {
+  const status = await getPlanStatus(userId);
+  if (status.rank < 1) {
     const count = await prisma.account.count({ where: { userId } });
     if (count >= FREE_LIMITS.accounts) {
       return {
         ok: false,
-        error: `Plan Gratuit limité à ${FREE_LIMITS.accounts} portefeuille. Passez Premium pour en ajouter.`,
+        error: `Plan Gratuit limité à ${FREE_LIMITS.accounts} portefeuille. Passez à un plan payant pour en ajouter.`,
       };
     }
   }

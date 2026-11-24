@@ -67,8 +67,8 @@ export async function createTransaction(
   const userId = await requireUserId();
 
   // Limite du plan Gratuit : nombre d'opérations par mois.
-  const { premium } = await getPlanStatus(userId);
-  if (!premium) {
+  const status = await getPlanStatus(userId);
+  if (status.rank < 1) {
     const { start, end } = monthRange();
     const count = await prisma.transaction.count({
       where: { userId, date: { gte: start, lt: end } },
@@ -76,7 +76,7 @@ export async function createTransaction(
     if (count >= FREE_LIMITS.txPerMonth) {
       return {
         ok: false,
-        error: `Plan Gratuit limité à ${FREE_LIMITS.txPerMonth} opérations/mois. Passez Premium pour en ajouter plus.`,
+        error: `Plan Gratuit limité à ${FREE_LIMITS.txPerMonth} opérations/mois. Passez à un plan payant pour en ajouter plus.`,
       };
     }
   }

@@ -12,15 +12,16 @@ import {
   Search,
 } from "lucide-react";
 import { deleteUser, resetUserPassword, updateUserAdmin } from "@/lib/actions/admin";
-import { grantPremium, cancelPremium } from "@/lib/actions/subscription";
+import { grantPlan, cancelSubscription } from "@/lib/actions/subscription";
 import { useConfirm } from "@/components/confirm-dialog";
 import { CURRENCIES } from "@/lib/currencies";
-import { PLAN_LABELS } from "@/lib/plans";
+import { PLAN_LABELS, type PlanKey, type Cycle } from "@/lib/plans";
 import { Button, Card, Input } from "@/components/ui";
 import { cn, formatMoney } from "@/lib/utils";
 
 export type AdminSub = {
   id: string;
+  plan: string;
   cycle: string;
   priceCents: number;
   startedAt: string;
@@ -40,13 +41,14 @@ export type AdminUserRow = {
   incomeCents: number;
   expenseCents: number;
   isAdmin: boolean;
-  premium: boolean;
+  plan: string;
+  rank: number;
   grandfathered: boolean;
-  premiumUntil: string | null;
+  planUntil: string | null;
   subscriptions: AdminSub[];
 };
 
-type SortKey = "recent" | "name" | "balance" | "premium";
+type SortKey = "recent" | "name" | "balance" | "plan";
 
 export function AdminUsers({ rows }: { rows: AdminUserRow[] }) {
   const [q, setQ] = useState("");
@@ -66,8 +68,8 @@ export function AdminUsers({ rows }: { rows: AdminUserRow[] }) {
           return (a.name ?? a.email).localeCompare(b.name ?? b.email);
         case "balance":
           return b.incomeCents - b.expenseCents - (a.incomeCents - a.expenseCents);
-        case "premium":
-          return Number(b.premium) - Number(a.premium);
+        case "plan":
+          return b.rank - a.rank;
         default:
           return +new Date(b.createdAt) - +new Date(a.createdAt);
       }
@@ -95,7 +97,7 @@ export function AdminUsers({ rows }: { rows: AdminUserRow[] }) {
           <option value="recent">Plus récents</option>
           <option value="name">Nom (A→Z)</option>
           <option value="balance">Solde (élevé→bas)</option>
-          <option value="premium">Premium d&apos;abord</option>
+          <option value="plan">Plan (élevé→bas)</option>
         </select>
       </div>
 
@@ -118,20 +120,25 @@ export function AdminUsers({ rows }: { rows: AdminUserRow[] }) {
 function AdminUserItem({ user }: { user: AdminUserRow }) {
   const confirm = useConfirm();
   const [pending, startTransition] = useTransition();
-  const [panel, setPanel] = useState<null | "reset" | "edit" | "history">(null);
+  const [panel, setPanel] = useState<null | "reset" | "edit" | "history" | "plan">(null);
   const [pwd, setPwd] = useState("");
   const [name, setName] = useState(user.name ?? "");
   const [currency, setCurrency] = useState(user.currency);
+  const [grantPlanKey, setGrantPlanKey] = useState<PlanKey>("ESSENTIEL");
+  const [grantCycle, setGrantCycle] = useState<Cycle>("MENSUEL");
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   const balance = user.incomeCents - user.expenseCents;
 
-  function toggle(p: "reset" | "edit" | "history") {
+  function toggle(p: "reset" | "edit" | "history" | "plan") {
     setMsg(null);
     setPanel((cur) => (cur === p ? null : p));
   }
 
-  function act(fn: () => Promise<{ ok: boolean; error?: string }>, okMsg?: string) {
+  function act(
+    fn: () => Promise<{ ok: boolean; error?: string }>,
+    okMsg?: string,
+  ) {
     setMsg(null);
     startTransition(async () => {
       const res = await fn();
@@ -152,13 +159,14 @@ function AdminUserItem({ user }: { user: AdminUserRow }) {
     act(() => deleteUser(user.id));
   }
 
-  const planBadge = user.premium
-    ? user.grandfathered
-      ? "Premium (offert)"
-      : user.premiumUntil
-        ? `Premium · ${new Date(user.premiumUntil).toLocaleDateString("fr-FR")}`
-        : "Premium"
-    : "Gratuit";
+  const planBadge =
+    user.rank >= 1
+      ? user.grandfathered
+        ? `${PLAN_LABELS[user.plan]} (offert)`
+        : user.planUntil
+          ? `${PLAN_LABELS[user.plan]} · ${new Date(user.planUntil).toLocaleDateString("fr-FR")}`
+          : PLAN_LABELS[user.plan]
+      : "Gratuit";
 
   return (
     <li className={cn("px-5 py-4", pending && "opacity-50")}>
@@ -174,9 +182,7 @@ function AdminUserItem({ user }: { user: AdminUserRow }) {
             <span
               className={cn(
                 "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
-                user.premium
-                  ? "bg-primary/10 text-primary"
-                  : "bg-surface-muted text-muted",
+                user.rank >= 1 ? "bg-primary/10 text-primary" : "bg-surface-muted text-muted",
               )}
             >
               <Crown className="h-3 w-3" /> {planBadge}
@@ -196,7 +202,10 @@ function AdminUserItem({ user }: { user: AdminUserRow }) {
         </div>
 
         <div className="flex shrink-0 flex-wrap justify-end gap-1">
-          <IconBtn title="Historique abonnements" onClick={() => toggle("history")} active={panel === "history"}>
+          <IconBtn title="Abonnement" onClick={() => toggle("plan")} active={panel === "plan"}>
+            <Crown className="h-4 w-4" />
+          </IconBtn>
+          <IconBtn title="Historique" onClick={() => toggle("history")} active={panel === "history"}>
             <History className="h-4 w-4" />
           </IconBtn>
           <IconBtn title="Modifier" onClick={() => toggle("edit")} active={panel === "edit"}>
@@ -213,23 +222,33 @@ function AdminUserItem({ user }: { user: AdminUserRow }) {
         </div>
       </div>
 
-      {/* Abonnement : boutons */}
-      <div className="mt-3 flex flex-wrap gap-2">
-        <Button type="button" size="md" className="h-9" disabled={pending}
-          onClick={() => act(() => grantPremium(user.id, "MENSUEL"), "Premium +1 mois activé.")}>
-          <Crown className="h-4 w-4" /> +1 mois
-        </Button>
-        <Button type="button" size="md" variant="outline" className="h-9" disabled={pending}
-          onClick={() => act(() => grantPremium(user.id, "ANNUEL"), "Premium +1 an activé.")}>
-          +1 an
-        </Button>
-        {user.premium && !user.grandfathered && (
-          <Button type="button" size="md" variant="danger" className="h-9" disabled={pending}
-            onClick={() => act(() => cancelPremium(user.id), "Premium annulé.")}>
-            Annuler
-          </Button>
-        )}
-      </div>
+      {/* Panneau : gestion de l'abonnement */}
+      {panel === "plan" && (
+        <div className="mt-3 space-y-2 rounded-xl bg-surface-muted p-3">
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <select value={grantPlanKey} onChange={(e) => setGrantPlanKey(e.target.value as PlanKey)}
+              className="h-10 flex-1 rounded-xl border border-border bg-surface px-3 text-sm outline-none focus:border-primary">
+              <option value="ESSENTIEL">Essentiel</option>
+              <option value="PREMIUM">Premium</option>
+            </select>
+            <select value={grantCycle} onChange={(e) => setGrantCycle(e.target.value as Cycle)}
+              className="h-10 flex-1 rounded-xl border border-border bg-surface px-3 text-sm outline-none focus:border-primary">
+              <option value="MENSUEL">+1 mois</option>
+              <option value="ANNUEL">+1 an</option>
+            </select>
+            <Button type="button" className="h-10 shrink-0" disabled={pending}
+              onClick={() => act(() => grantPlan(user.id, grantPlanKey, grantCycle), "Abonnement activé.")}>
+              Activer
+            </Button>
+          </div>
+          {user.rank >= 1 && !user.grandfathered && (
+            <Button type="button" variant="danger" className="h-9" disabled={pending}
+              onClick={() => act(() => cancelSubscription(user.id), "Repassé en Gratuit.")}>
+              Repasser en Gratuit
+            </Button>
+          )}
+        </div>
+      )}
 
       {/* Panneau : réinitialiser mot de passe */}
       {panel === "reset" && (
@@ -279,7 +298,7 @@ function AdminUserItem({ user }: { user: AdminUserRow }) {
                 <li key={s.id} className="flex items-center justify-between py-2 text-sm">
                   <div>
                     <p className="font-medium">
-                      {PLAN_LABELS[s.cycle] ?? s.cycle}{" "}
+                      {PLAN_LABELS[s.plan] ?? s.plan} · {PLAN_LABELS[s.cycle] ?? s.cycle}{" "}
                       <span className="text-xs font-normal text-muted">({s.status})</span>
                     </p>
                     <p className="text-xs text-muted">

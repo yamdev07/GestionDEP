@@ -10,7 +10,7 @@ import {
   Check,
   Crown,
 } from "lucide-react";
-import { PRICE_MONTHLY_CENTS, PRICE_ANNUAL_CENTS } from "@/lib/plans";
+import { PLANS } from "@/lib/plans";
 import { formatMoney } from "@/lib/utils";
 
 const FEATURES = [
@@ -26,8 +26,8 @@ const FEATURES = [
   },
   {
     icon: Target,
-    title: "Budgets & alertes",
-    text: "Fixez un plafond par catégorie et visualisez quand vous approchez de la limite.",
+    title: "Budgets & épargne",
+    text: "Fixez des plafonds par catégorie et mettez de l'argent de côté avec des objectifs.",
   },
   {
     icon: PieChart,
@@ -42,7 +42,37 @@ const FEATURES = [
   {
     icon: ShieldCheck,
     title: "Privé & sécurisé",
-    text: "Vos données restent sur votre instance. Connexion protégée, mots de passe chiffrés.",
+    text: "Vos données restent protégées. Connexion sécurisée, mots de passe chiffrés.",
+  },
+];
+
+const PRICING: {
+  key: "GRATUIT" | "ESSENTIEL" | "PREMIUM";
+  features: string[];
+  highlight?: boolean;
+}[] = [
+  {
+    key: "GRATUIT",
+    features: ["1 portefeuille", "50 opérations / mois", "1 objectif d'épargne"],
+  },
+  {
+    key: "ESSENTIEL",
+    highlight: true,
+    features: [
+      "Portefeuilles illimités",
+      "Opérations illimitées",
+      "Budgets par catégorie",
+      "Statistiques avancées",
+    ],
+  },
+  {
+    key: "PREMIUM",
+    features: [
+      "Tout l'Essentiel",
+      "Export des données",
+      "Partage familial (à venir)",
+      "Support prioritaire",
+    ],
   },
 ];
 
@@ -85,9 +115,9 @@ export function Landing() {
           </span>
         </h1>
         <p className="mx-auto mt-4 max-w-xl text-base text-muted sm:text-lg">
-          MonBudget vous aide à suivre vos revenus et vos dépenses, gérer vos
-          comptes (espèces, Mobile Money, banque), fixer des budgets et
-          visualiser où part votre argent — le tout en Francs CFA.
+          MonBudget vous aide à suivre vos revenus et dépenses, gérer vos
+          comptes (espèces, Mobile Money, banque), épargner et visualiser où
+          part votre argent — le tout en Francs CFA.
         </p>
         <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link
@@ -105,7 +135,7 @@ export function Landing() {
         </div>
       </section>
 
-      {/* Aperçu / carte solde factice */}
+      {/* Aperçu carte solde */}
       <section className="mx-auto max-w-sm px-4 pb-12">
         <div className="gradient-primary rounded-3xl p-6 text-white shadow-xl shadow-primary/20">
           <p className="text-sm text-white/80">Solde disponible</p>
@@ -145,78 +175,70 @@ export function Landing() {
       </section>
 
       {/* Tarifs */}
-      <section id="tarifs" className="mx-auto max-w-3xl px-4 pb-16 scroll-mt-6">
+      <section id="tarifs" className="mx-auto max-w-5xl px-4 pb-16 scroll-mt-6">
         <h2 className="mb-2 text-center text-2xl font-bold">Des tarifs simples</h2>
-        <p className="mb-7 text-center text-muted">
-          Commence gratuitement, passe Premium quand tu veux.
+        <p className="mb-8 text-center text-muted">
+          Commence gratuitement, passe à un plan payant quand tu veux.
         </p>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {/* Gratuit */}
-          <div className="flex flex-col rounded-3xl border border-border bg-surface p-6">
-            <h3 className="font-bold">Gratuit</h3>
-            <p className="mt-1 text-3xl font-extrabold">
-              {formatMoney(0, "XOF")}
-            </p>
-            <ul className="mt-4 flex-1 space-y-2 text-sm">
-              {[
-                "1 portefeuille",
-                "50 opérations / mois",
-                "1 objectif d'épargne",
-                "Suivi revenus & dépenses",
-              ].map((t) => (
-                <li key={t} className="flex items-center gap-2">
-                  <Check className="h-4 w-4 shrink-0 text-success" /> {t}
-                </li>
-              ))}
-            </ul>
-            <Link
-              href="/register"
-              className="mt-5 flex h-11 items-center justify-center rounded-xl border border-border font-medium transition hover:bg-surface-muted"
-            >
-              Commencer gratuitement
-            </Link>
-          </div>
-
-          {/* Premium */}
-          <div className="relative flex flex-col rounded-3xl border-2 border-primary bg-surface p-6">
-            <span className="absolute -top-3 left-6 rounded-full bg-primary px-3 py-0.5 text-xs font-semibold text-white">
-              Populaire
-            </span>
-            <h3 className="flex items-center gap-1.5 font-bold text-primary">
-              <Crown className="h-5 w-5" /> Premium
-            </h3>
-            <p className="mt-1 text-3xl font-extrabold">
-              {formatMoney(PRICE_MONTHLY_CENTS, "XOF")}
-              <span className="text-base font-medium text-muted"> / mois</span>
-            </p>
-            <p className="text-sm text-muted">
-              ou {formatMoney(PRICE_ANNUAL_CENTS, "XOF")} / an (2 mois offerts)
-            </p>
-            <ul className="mt-4 flex-1 space-y-2 text-sm">
-              {[
-                "Portefeuilles illimités",
-                "Opérations illimitées",
-                "Budgets par catégorie",
-                "Statistiques avancées",
-                "Objectifs d'épargne illimités",
-                "Export des données",
-              ].map((t) => (
-                <li key={t} className="flex items-center gap-2">
-                  <Check className="h-4 w-4 shrink-0 text-success" /> {t}
-                </li>
-              ))}
-            </ul>
-            <Link
-              href="/register"
-              className="gradient-primary mt-5 flex h-11 items-center justify-center gap-2 rounded-xl font-semibold text-white transition active:scale-[0.99]"
-            >
-              <Crown className="h-4 w-4" /> Passer Premium
-            </Link>
-            <p className="mt-2 text-center text-xs text-muted">
-              Paiement Mobile Money bientôt · activation après inscription
-            </p>
-          </div>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          {PRICING.map(({ key, features, highlight }) => {
+            const plan = PLANS[key];
+            return (
+              <div
+                key={key}
+                className={
+                  "relative flex flex-col rounded-3xl bg-surface p-6 " +
+                  (highlight
+                    ? "border-2 border-primary shadow-lg shadow-primary/10"
+                    : "border border-border")
+                }
+              >
+                {highlight && (
+                  <span className="absolute -top-3 left-6 rounded-full bg-primary px-3 py-0.5 text-xs font-semibold text-white">
+                    Recommandé
+                  </span>
+                )}
+                <h3 className="flex items-center gap-1.5 font-bold">
+                  {key !== "GRATUIT" && <Crown className="h-4 w-4 text-primary" />}
+                  {plan.label}
+                </h3>
+                <p className="mt-1 text-3xl font-extrabold">
+                  {formatMoney(plan.monthlyCents, "XOF")}
+                  {key !== "GRATUIT" && (
+                    <span className="text-base font-medium text-muted"> / mois</span>
+                  )}
+                </p>
+                {key !== "GRATUIT" && (
+                  <p className="text-xs text-muted">
+                    ou {formatMoney(plan.annualCents, "XOF")} / an
+                  </p>
+                )}
+                <ul className="mt-4 flex-1 space-y-2 text-sm">
+                  {features.map((t) => (
+                    <li key={t} className="flex items-center gap-2">
+                      <Check className="h-4 w-4 shrink-0 text-success" /> {t}
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  href="/register"
+                  className={
+                    "mt-5 flex h-11 items-center justify-center gap-2 rounded-xl font-semibold transition active:scale-[0.99] " +
+                    (highlight || key === "PREMIUM"
+                      ? "gradient-primary text-white"
+                      : "border border-border hover:bg-surface-muted")
+                  }
+                >
+                  {key === "GRATUIT" ? "Commencer gratuitement" : `Choisir ${plan.label}`}
+                </Link>
+              </div>
+            );
+          })}
         </div>
+        <p className="mt-5 text-center text-xs text-muted">
+          Paiement sécurisé par FedaPay (Mobile Money &amp; carte) · activation
+          après inscription.
+        </p>
       </section>
 
       {/* CTA final */}
@@ -224,7 +246,7 @@ export function Landing() {
         <div className="rounded-3xl border border-border bg-surface p-8 text-center">
           <h2 className="text-2xl font-bold">Prêt à reprendre le contrôle ?</h2>
           <p className="mx-auto mt-2 max-w-md text-muted">
-            Créez votre compte en moins d&apos;une minute. C&apos;est gratuit.
+            Créez votre compte en moins d&apos;une minute.
           </p>
           <Link
             href="/register"

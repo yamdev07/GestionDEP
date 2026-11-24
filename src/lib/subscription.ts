@@ -1,33 +1,35 @@
 import { prisma } from "@/lib/prisma";
-import { SAAS_LAUNCH, FREE_LIMITS } from "@/lib/plans";
+import { SAAS_LAUNCH, FREE_LIMITS, planRank } from "@/lib/plans";
 
-/** Premium si grandfathered (compte ancien) ou abonnement encore valide. */
-export function computeIsPremium(u: {
-  premiumUntil: Date | null;
+/** Plan effectif : grandfathered (compte ancien) → Premium ; sinon le plan si encore valide, sinon Gratuit. */
+export function effectivePlan(u: {
+  plan: string;
+  planUntil: Date | null;
   createdAt: Date;
-}): boolean {
-  if (u.createdAt.getTime() < SAAS_LAUNCH.getTime()) return true;
-  return !!u.premiumUntil && u.premiumUntil.getTime() > Date.now();
+}): string {
+  if (u.createdAt.getTime() < SAAS_LAUNCH.getTime()) return "PREMIUM";
+  if (u.planUntil && u.planUntil.getTime() > Date.now()) return u.plan;
+  return "GRATUIT";
 }
 
 export type PlanStatus = {
-  premium: boolean;
-  premiumUntil: Date | null;
+  plan: string;
+  rank: number;
+  planUntil: Date | null;
   grandfathered: boolean;
 };
 
 export async function getPlanStatus(userId: string): Promise<PlanStatus> {
   const u = await prisma.user.findUnique({
     where: { id: userId },
-    select: { premiumUntil: true, createdAt: true },
+    select: { plan: true, planUntil: true, createdAt: true },
   });
-  if (!u) return { premium: false, premiumUntil: null, grandfathered: false };
+  if (!u) {
+    return { plan: "GRATUIT", rank: 0, planUntil: null, grandfathered: false };
+  }
   const grandfathered = u.createdAt.getTime() < SAAS_LAUNCH.getTime();
-  return {
-    premium: computeIsPremium(u),
-    premiumUntil: u.premiumUntil,
-    grandfathered,
-  };
+  const plan = effectivePlan(u);
+  return { plan, rank: planRank(plan), planUntil: u.planUntil, grandfathered };
 }
 
 /** Bornes du mois courant (pour compter les opérations). */
