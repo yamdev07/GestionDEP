@@ -4,10 +4,11 @@ import { Download, Lock } from "lucide-react";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getPlanStatus } from "@/lib/subscription";
-import { canExport } from "@/lib/plans";
+import { canExport, canJournal } from "@/lib/plans";
 import { resolvePeriod, periodDays, type PeriodKey } from "@/lib/period";
 import { AppShell } from "@/components/app-shell";
 import { TransactionRow, type TransactionView } from "@/components/transaction-row";
+import { PremiumGate } from "@/components/premium-gate";
 import { PrintButton } from "@/components/print-button";
 import { Button, Card, Input, Label } from "@/components/ui";
 import { cn, formatMoney } from "@/lib/utils";
@@ -33,21 +34,37 @@ export default async function JournalPage({
   const sp = await searchParams;
   const period = resolvePeriod(sp);
 
-  const [user, status, transactions] = await Promise.all([
+  const [user, status] = await Promise.all([
     prisma.user.findUnique({ where: { id: userId }, select: { currency: true } }),
     getPlanStatus(userId),
-    prisma.transaction.findMany({
-      where: {
-        userId,
-        type: "EXPENSE",
-        date: { gte: period.start, lt: period.end },
-      },
-      orderBy: { date: "desc" },
-      include: { category: { select: { name: true, color: true, icon: true } } },
-    }),
   ]);
   if (!user) redirect("/login");
   const currency = user.currency;
+
+  if (!canJournal(status.plan)) {
+    return (
+      <AppShell>
+        <div className="space-y-5">
+          <h1 className="text-2xl font-bold">Journal des dépenses</h1>
+          <PremiumGate
+            title="Fonction des plans payants"
+            description="Le Journal te montre précisément où part ton argent sur la période de ton choix, avec le détail jour par jour. Disponible dès le plan Essentiel."
+            pay={null}
+          />
+        </div>
+      </AppShell>
+    );
+  }
+
+  const transactions = await prisma.transaction.findMany({
+    where: {
+      userId,
+      type: "EXPENSE",
+      date: { gte: period.start, lt: period.end },
+    },
+    orderBy: { date: "desc" },
+    include: { category: { select: { name: true, color: true, icon: true } } },
+  });
   const exportAllowed = canExport(status.plan);
 
   const total = transactions.reduce((s, t) => s + t.amountCents, 0);

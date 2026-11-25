@@ -20,12 +20,15 @@ const PLAN_FEATURES: Record<PlanKey, string[]> = {
     "Opérations illimitées",
     "Objectifs illimités",
     "Budgets par catégorie",
+    "Journal des dépenses",
     "Statistiques avancées",
   ],
   PREMIUM: [
     "Tout l'Essentiel",
+    "Opérations récurrentes",
+    "Alertes de budget",
+    "Solde prévisionnel",
     "Export des données",
-    "Partage familial (à venir)",
     "Support prioritaire",
   ],
 };

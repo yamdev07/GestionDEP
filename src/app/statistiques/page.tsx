@@ -3,8 +3,11 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { AppShell } from "@/components/app-shell";
 import { CategoryChart } from "@/components/category-chart";
+import { PremiumGate } from "@/components/premium-gate";
 import { Card } from "@/components/ui";
 import { formatMoney } from "@/lib/utils";
+import { getPlanStatus } from "@/lib/subscription";
+import { canAdvancedStats } from "@/lib/plans";
 
 export default async function StatsPage() {
   const session = await auth();
@@ -17,6 +20,22 @@ export default async function StatsPage() {
   });
   if (!user) redirect("/login");
   const currency = user.currency;
+
+  const status = await getPlanStatus(userId);
+  if (!canAdvancedStats(status.plan)) {
+    return (
+      <AppShell>
+        <div className="space-y-5">
+          <h1 className="text-2xl font-bold">Statistiques</h1>
+          <PremiumGate
+            title="Fonction des plans payants"
+            description="Répartition des dépenses par catégorie et tendance sur 6 mois. Disponible dès le plan Essentiel."
+            pay={null}
+          />
+        </div>
+      </AppShell>
+    );
+  }
 
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
