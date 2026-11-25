@@ -1,7 +1,8 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { CalendarPlus, Plus, Trash2 } from "lucide-react";
 import {
   createCategory,
   deleteCategory,
@@ -133,6 +134,14 @@ function CategoryItem({ cat, currency }: { cat: CatView; currency: string }) {
           {formatMoney(cat.totalCents, currency)}
         </p>
       </div>
+      <Link
+        href={`/categories/${cat.id}/saisie`}
+        title="Saisir des dépenses passées"
+        className="flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-sm font-medium text-muted transition hover:bg-primary/10 hover:text-primary"
+      >
+        <CalendarPlus className="h-4 w-4" />
+        <span className="hidden sm:inline">Saisir</span>
+      </Link>
       <button
         onClick={onDelete}
         disabled={pending}

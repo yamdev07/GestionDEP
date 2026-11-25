@@ -130,6 +130,102 @@ export async function deleteTransaction(id: string): Promise<ActionResult> {
   return { ok: true };
 }
 
+export type AddExpenseResult =
+  | {
+      ok: true;
+      expense: { id: string; amountCents: number; date: string; note: string };
+    }
+  | { ok: false; error: string; upgrade?: boolean };
+
+const pastExpenseInput = z.object({
+  amount: z.string().min(1, "Montant requis"),
+  date: z.string().min(1, "Date requise"),
+  note: z.string().trim().max(200).optional(),
+  categoryId: z.string().min(1, "Catégorie requise"),
+  accountId: z.string().optional(),
+});
+
+/**
+ * Ajoute une dépense (souvent antidatée) rattachée à une catégorie donnée.
+ * Pensé pour la saisie groupée depuis une catégorie : appelable directement
+ * depuis un composant client, renvoie la dépense créée pour l'affichage.
+ * La limite du plan Gratuit s'applique au mois de la date saisie.
+ */
+export async function addPastExpense(input: {
+  amount: string;
+  date: string;
+  note?: string;
+  categoryId: string;
+  accountId?: string;
+}): Promise<AddExpenseResult> {
+  const userId = await requireUserId();
+
+  const parsed = pastExpenseInput.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalide" };
+  }
+
+  // La catégorie doit appartenir à l'utilisateur.
+  const cat = await prisma.category.findFirst({
+    where: { id: parsed.data.categoryId, userId },
+    select: { id: true },
+  });
+  if (!cat) return { ok: false, error: "Catégorie introuvable." };
+
+  const amountCents = parseAmountToCents(parsed.data.amount);
+  if (amountCents === null || amountCents <= 0) {
+    return { ok: false, error: "Montant invalide" };
+  }
+
+  const date = new Date(parsed.data.date);
+  if (isNaN(date.getTime())) {
+    return { ok: false, error: "Date invalide" };
+  }
+
+  // Limite du plan Gratuit : nombre d'opérations pour le MOIS de la date saisie.
+  const status = await getPlanStatus(userId);
+  if (status.rank < 1) {
+    const { start, end } = monthRange(date);
+    const count = await prisma.transaction.count({
+      where: { userId, date: { gte: start, lt: end } },
+    });
+    if (count >= FREE_LIMITS.txPerMonth) {
+      return {
+        ok: false,
+        upgrade: true,
+        error: `Limite du plan Gratuit atteinte pour ce mois (${FREE_LIMITS.txPerMonth} opérations).`,
+      };
+    }
+  }
+
+  const accountId = await resolveAccountId(userId, parsed.data.accountId);
+
+  const tx = await prisma.transaction.create({
+    data: {
+      userId,
+      type: "EXPENSE",
+      amountCents,
+      note: parsed.data.note ?? "",
+      date,
+      categoryId: cat.id,
+      accountId,
+    },
+    select: { id: true, amountCents: true, date: true, note: true },
+  });
+
+  revalidateAll();
+  revalidatePath("/categories");
+  return {
+    ok: true,
+    expense: {
+      id: tx.id,
+      amountCents: tx.amountCents,
+      date: tx.date.toISOString(),
+      note: tx.note,
+    },
+  };
+}
+
 const updateInput = transactionInput.extend({ id: z.string().min(1) });
 
 export async function updateTransaction(

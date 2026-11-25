@@ -58,6 +58,54 @@ export async function createCategory(
   return { ok: true };
 }
 
+export type QuickCategoryResult =
+  | { ok: true; category: { id: string; name: string; color: string } }
+  | { ok: false; error: string };
+
+/**
+ * Création rapide d'une catégorie, appelable directement depuis un composant
+ * client (hors <form>). Renvoie la catégorie créée pour que l'appelant puisse
+ * l'ajouter à sa liste locale et la sélectionner immédiatement.
+ */
+export async function quickCreateCategory(
+  name: string,
+  color: string,
+): Promise<QuickCategoryResult> {
+  const userId = await requireUserId();
+
+  const parsed = categoryInput.safeParse({
+    name,
+    color: color || undefined,
+    icon: undefined,
+  });
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalide" };
+  }
+
+  const exists = await prisma.category.findFirst({
+    where: { userId, name: parsed.data.name },
+    select: { id: true },
+  });
+  if (exists) {
+    return { ok: false, error: "Cette catégorie existe déjà." };
+  }
+
+  const cat = await prisma.category.create({
+    data: {
+      userId,
+      name: parsed.data.name,
+      color: parsed.data.color,
+      icon: parsed.data.icon,
+    },
+    select: { id: true, name: true, color: true },
+  });
+
+  revalidatePath("/categories");
+  revalidatePath("/ajouter");
+  revalidatePath("/");
+  return { ok: true, category: cat };
+}
+
 export async function deleteCategory(id: string): Promise<ActionResult> {
   const userId = await requireUserId();
   // Les dépenses liées passent à "sans catégorie" (onDelete: SetNull).
