@@ -6,9 +6,11 @@ import { prisma } from "@/lib/prisma";
 import { ensureDefaultAccount } from "@/lib/actions/accounts";
 import { materializeRecurring } from "@/lib/actions/recurring";
 import { getPlanStatus } from "@/lib/subscription";
-import { canBudgetAlerts } from "@/lib/plans";
+import { canBudgetAlerts, canForecast } from "@/lib/plans";
 import { getBudgetAlerts } from "@/lib/budget-alerts";
+import { getUpcomingRecurring } from "@/lib/forecast";
 import { BudgetAlerts } from "@/components/budget-alerts";
+import { ForecastCard } from "@/components/forecast-card";
 import { accountTypeIcon } from "@/lib/account-types";
 import { AppShell } from "@/components/app-shell";
 import { Landing } from "@/components/landing";
@@ -107,6 +109,11 @@ export default async function DashboardPage() {
     .reduce((s, t) => s + t.amountCents, 0);
   const balanceCents = incomeCents - expenseCents;
 
+  // Solde prévisionnel (Premium) : récurrences à venir d'ici la fin du mois.
+  const upcoming = canForecast(status.plan)
+    ? await getUpcomingRecurring(userId, now, monthEnd)
+    : { incomeCents: 0, expenseCents: 0, occurrences: 0 };
+
   // Répartition des dépenses par catégorie (ce mois).
   const byCat = new Map<string, { name: string; value: number; color: string }>();
   for (const t of monthTx) {
@@ -127,6 +134,12 @@ export default async function DashboardPage() {
         <BalanceCard
           balanceCents={balanceCents}
           monthLabel={monthLabel}
+          currency={currency}
+        />
+
+        <ForecastCard
+          currentNetCents={balanceCents}
+          upcoming={upcoming}
           currency={currency}
         />
 
