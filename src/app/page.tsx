@@ -4,6 +4,7 @@ import { ArrowUpRight, ArrowDownRight, Plus, ChevronRight, PiggyBank } from "luc
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { ensureDefaultAccount } from "@/lib/actions/accounts";
+import { materializeRecurring } from "@/lib/actions/recurring";
 import { accountTypeIcon } from "@/lib/account-types";
 import { AppShell } from "@/components/app-shell";
 import { Landing } from "@/components/landing";
@@ -32,6 +33,8 @@ export default async function DashboardPage() {
   const currency = user.currency;
 
   await ensureDefaultAccount(userId);
+  // Génère les opérations récurrentes dues (Premium ; sans effet sinon).
+  await materializeRecurring(userId);
 
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
