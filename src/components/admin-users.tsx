@@ -17,6 +17,7 @@ import { useConfirm } from "@/components/confirm-dialog";
 import { CURRENCIES } from "@/lib/currencies";
 import { PLAN_LABELS, type PlanKey, type Cycle } from "@/lib/plans";
 import { Button, Card, Input } from "@/components/ui";
+import { PasswordInput } from "@/components/password-input";
 import { cn, formatMoney } from "@/lib/utils";
 
 export type AdminSub = {
@@ -253,7 +254,7 @@ function AdminUserItem({ user }: { user: AdminUserRow }) {
       {/* Panneau : réinitialiser mot de passe */}
       {panel === "reset" && (
         <div className="mt-3 flex flex-col gap-2 rounded-xl bg-surface-muted p-3 sm:flex-row">
-          <Input type="password" value={pwd} onChange={(e) => setPwd(e.target.value)}
+          <PasswordInput value={pwd} onChange={(e) => setPwd(e.target.value)}
             placeholder="Nouveau mot de passe (6 car. min.)" autoComplete="new-password" className="bg-surface" />
           <Button type="button" className="shrink-0" disabled={pending || pwd.length < 6}
             onClick={() => act(async () => {

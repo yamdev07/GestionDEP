@@ -4,7 +4,8 @@ import { useActionState, useEffect, useState } from "react";
 import { Check } from "lucide-react";
 import { changePassword } from "@/lib/actions/profile";
 import type { ActionResult } from "@/lib/actions/transactions";
-import { Button, Input, Label } from "@/components/ui";
+import { Button, Label } from "@/components/ui";
+import { PasswordInput } from "@/components/password-input";
 
 export function PasswordForm() {
   const [state, formAction, pending] = useActionState<
@@ -32,10 +33,9 @@ export function PasswordForm() {
     <form action={formAction} className="space-y-4">
       <div>
         <Label htmlFor="currentPassword">Mot de passe actuel</Label>
-        <Input
+        <PasswordInput
           id="currentPassword"
           name="currentPassword"
-          type="password"
           autoComplete="current-password"
           value={current}
           onChange={(e) => setCurrent(e.target.value)}
@@ -45,10 +45,9 @@ export function PasswordForm() {
 
       <div>
         <Label htmlFor="newPassword">Nouveau mot de passe</Label>
-        <Input
+        <PasswordInput
           id="newPassword"
           name="newPassword"
-          type="password"
           autoComplete="new-password"
           value={next}
           onChange={(e) => setNext(e.target.value)}
@@ -58,10 +57,9 @@ export function PasswordForm() {
 
       <div>
         <Label htmlFor="confirmPassword">Confirmer le nouveau mot de passe</Label>
-        <Input
+        <PasswordInput
           id="confirmPassword"
           name="confirmPassword"
-          type="password"
           autoComplete="new-password"
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}

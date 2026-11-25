@@ -3,7 +3,8 @@
 import { useActionState, useState } from "react";
 import { Trash2, AlertTriangle } from "lucide-react";
 import { deleteMyAccount } from "@/lib/actions/profile";
-import { Button, Input, Label } from "@/components/ui";
+import { Button, Label } from "@/components/ui";
+import { PasswordInput } from "@/components/password-input";
 import type { ActionResult } from "@/lib/actions/transactions";
 
 export function DeleteAccountForm() {
@@ -39,10 +40,9 @@ export function DeleteAccountForm() {
       </div>
       <div>
         <Label htmlFor="del-pass">Mot de passe</Label>
-        <Input
+        <PasswordInput
           id="del-pass"
           name="password"
-          type="password"
           autoComplete="current-password"
           required
           placeholder="••••••••"

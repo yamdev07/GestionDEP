@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import Link from "next/link";
 import { login, type LoginState } from "@/lib/actions/auth";
 import { Button, Input, Label } from "@/components/ui";
+import { PasswordInput } from "@/components/password-input";
 
 export function LoginForm({ next = null }: { next?: string | null }) {
   const [state, formAction, pending] = useActionState<LoginState, FormData>(
@@ -27,10 +28,9 @@ export function LoginForm({ next = null }: { next?: string | null }) {
       </div>
       <div>
         <Label htmlFor="password">Mot de passe</Label>
-        <Input
+        <PasswordInput
           id="password"
           name="password"
-          type="password"
           autoComplete="current-password"
           required
           placeholder="••••••••"

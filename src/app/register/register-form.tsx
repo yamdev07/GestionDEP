@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import Link from "next/link";
 import { registerUser, type RegisterState } from "@/lib/actions/auth";
 import { Button, Input, Label } from "@/components/ui";
+import { PasswordInput } from "@/components/password-input";
 
 export function RegisterForm({ next = null }: { next?: string | null }) {
   const [state, formAction, pending] = useActionState<RegisterState, FormData>(
@@ -31,10 +32,9 @@ export function RegisterForm({ next = null }: { next?: string | null }) {
       </div>
       <div>
         <Label htmlFor="password">Mot de passe</Label>
-        <Input
+        <PasswordInput
           id="password"
           name="password"
-          type="password"
           autoComplete="new-password"
           required
           minLength={6}
