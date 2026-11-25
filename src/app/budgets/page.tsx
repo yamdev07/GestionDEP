@@ -5,7 +5,11 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { AppShell } from "@/components/app-shell";
 import { BudgetManager, type BudgetRowData } from "@/components/budget-manager";
+import { BudgetAlerts } from "@/components/budget-alerts";
 import { Card } from "@/components/ui";
+import { getPlanStatus } from "@/lib/subscription";
+import { canBudgetAlerts } from "@/lib/plans";
+import { getBudgetAlerts } from "@/lib/budget-alerts";
 
 export default async function BudgetsPage() {
   const session = await auth();
@@ -17,6 +21,9 @@ export default async function BudgetsPage() {
     select: { currency: true },
   });
   if (!user) redirect("/login");
+
+  const status = await getPlanStatus(userId);
+  const alerts = canBudgetAlerts(status.plan) ? await getBudgetAlerts(userId) : [];
 
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -65,6 +72,8 @@ export default async function BudgetsPage() {
           <h1 className="text-2xl font-bold">Budgets</h1>
           <p className="text-sm capitalize text-muted">{monthLabel}</p>
         </div>
+
+        <BudgetAlerts alerts={alerts} currency={user.currency} />
 
         {rows.length === 0 ? (
           <Card className="flex flex-col items-center gap-3 py-10 text-center">

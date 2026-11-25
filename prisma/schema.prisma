@@ -16,12 +16,19 @@ enum TransactionType {
   EXPENSE
 }
 
+/// Fréquence d'une opération récurrente (fonction Premium).
+enum RecurrenceFrequency {
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
 /// Type de compte / portefeuille.
 enum AccountType {
-  CASH         // Espèces
+  CASH // Espèces
   MOBILE_MONEY // Wave, Orange Money, MoMo…
-  BANK         // Compte bancaire
-  OTHER        // Autre
+  BANK // Compte bancaire
+  OTHER // Autre
 }
 
 /// Plan d'abonnement (ordre croissant : Gratuit < Essentiel < Premium).
@@ -53,15 +60,15 @@ enum PaymentStatus {
 
 /// Un utilisateur. Chaque utilisateur ne voit QUE ses propres données.
 model User {
-  id           String     @id @default(cuid())
-  email        String     @unique
+  id           String    @id @default(cuid())
+  email        String    @unique
   name         String?
   passwordHash String
-  currency     String     @default("XOF") // devise affichée (XOF, XAF, EUR, USD, ...)
-  plan         Plan       @default(GRATUIT) // plan payant en cours
-  planUntil    DateTime?               // le plan payant reste actif tant que cette date est future
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  currency     String    @default("XOF") // devise affichée (XOF, XAF, EUR, USD, ...)
+  plan         Plan      @default(GRATUIT) // plan payant en cours
+  planUntil    DateTime? // le plan payant reste actif tant que cette date est future
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   categories    Category[]
   transactions  Transaction[]
@@ -70,6 +77,7 @@ model User {
   savingsGoals  SavingsGoal[]
   subscriptions Subscription[]
   payments      Payment[]
+  recurrings    RecurringTransaction[]
 }
 
 /// Historique des abonnements : une ligne par activation / renouvellement / changement.
@@ -97,7 +105,7 @@ model Payment {
   plan        Plan
   cycle       BillingCycle
   amountCents Int
-  fedapayId   String?       // id de la transaction FedaPay
+  fedapayId   String? // id de la transaction FedaPay
   status      PaymentStatus @default(PENDING)
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
@@ -110,15 +118,15 @@ model Payment {
 
 /// Objectif d'épargne : ce que l'utilisateur met de côté, avec un but optionnel.
 model SavingsGoal {
-  id         String    @id @default(cuid())
-  name       String
-  color      String    @default("#6d28d9")
-  targetCents Int      @default(0)  // objectif (0 = pas de cible, épargne libre)
-  savedCents Int       @default(0)  // montant déjà mis de côté
-  deadline   DateTime?              // date cible optionnelle
-  userId     String
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  id          String    @id @default(cuid())
+  name        String
+  color       String    @default("#6d28d9")
+  targetCents Int       @default(0) // objectif (0 = pas de cible, épargne libre)
+  savedCents  Int       @default(0) // montant déjà mis de côté
+  deadline    DateTime? // date cible optionnelle
+  userId      String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -131,12 +139,13 @@ model Account {
   name                String
   type                AccountType @default(CASH)
   color               String      @default("#6d28d9") // couleur d'affichage
-  initialBalanceCents Int         @default(0)         // solde de départ (centimes)
+  initialBalanceCents Int         @default(0) // solde de départ (centimes)
   userId              String
   createdAt           DateTime    @default(now())
 
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]
+  recurrings   RecurringTransaction[]
 
   @@unique([userId, name])
   @@index([userId])
@@ -144,15 +153,16 @@ model Account {
 
 /// Catégorie, personnalisable par utilisateur (utilisée par les dépenses).
 model Category {
-  id        String    @id @default(cuid())
+  id        String   @id @default(cuid())
   name      String
-  color     String    @default("#6366f1") // couleur hex pour les graphiques
-  icon      String    @default("tag")     // nom d'icône lucide (kebab-case)
+  color     String   @default("#6366f1") // couleur hex pour les graphiques
+  icon      String   @default("tag") // nom d'icône lucide (kebab-case)
   userId    String
-  createdAt DateTime  @default(now())
+  createdAt DateTime @default(now())
 
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]
+  recurrings   RecurringTransaction[]
   budget       Budget?
 
   @@unique([userId, name])
@@ -163,7 +173,7 @@ model Category {
 model Transaction {
   id          String          @id @default(cuid())
   type        TransactionType @default(EXPENSE)
-  amountCents Int             // ex: 12,50 € => 1250 ; 5000 F CFA => 500000
+  amountCents Int // ex: 12,50 € => 1250 ; 5000 F CFA => 500000
   note        String          @default("")
   date        DateTime        @default(now())
   userId      String
@@ -171,9 +181,9 @@ model Transaction {
   accountId   String?
   createdAt   DateTime        @default(now())
 
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  category    Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  account     Account?  @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  account  Account?  @relation(fields: [accountId], references: [id], onDelete: SetNull)
 
   @@index([userId, date])
   @@index([userId, type])
@@ -181,14 +191,39 @@ model Transaction {
   @@index([accountId])
 }
 
+/// Opération récurrente (Premium) : modèle qui génère automatiquement des
+/// opérations réelles à intervalle régulier (loyer, salaire, abonnements…).
+model RecurringTransaction {
+  id          String              @id @default(cuid())
+  type        TransactionType     @default(EXPENSE)
+  amountCents Int
+  note        String              @default("")
+  frequency   RecurrenceFrequency @default(MONTHLY)
+  nextRunAt   DateTime // prochaine date de génération
+  startDate   DateTime            @default(now())
+  active      Boolean             @default(true)
+  userId      String
+  categoryId  String?
+  accountId   String?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  account  Account?  @relation(fields: [accountId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([nextRunAt])
+}
+
 /// Budget mensuel optionnel pour une catégorie (plafond de dépenses).
 model Budget {
-  id         String   @id @default(cuid())
-  amountCents Int                        // plafond mensuel en centimes
-  userId     String
-  categoryId String   @unique            // un seul budget par catégorie
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id          String   @id @default(cuid())
+  amountCents Int // plafond mensuel en centimes
+  userId      String
+  categoryId  String   @unique // un seul budget par catégorie
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)

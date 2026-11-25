@@ -61,20 +61,23 @@ const PRICING: {
   },
   {
     key: "ESSENTIEL",
-    highlight: true,
     features: [
       "Portefeuilles illimités",
       "Opérations illimitées",
       "Budgets par catégorie",
+      "Journal des dépenses",
       "Statistiques avancées",
     ],
   },
   {
     key: "PREMIUM",
+    highlight: true,
     features: [
       "Tout l'Essentiel",
+      "Opérations récurrentes (loyer, salaire, abonnements…)",
+      "Alertes de budget",
+      "Solde prévisionnel",
       "Export des données",
-      "Partage familial (à venir)",
       "Support prioritaire",
     ],
   },

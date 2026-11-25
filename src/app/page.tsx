@@ -4,6 +4,13 @@ import { ArrowUpRight, ArrowDownRight, Plus, ChevronRight, PiggyBank } from "luc
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { ensureDefaultAccount } from "@/lib/actions/accounts";
+import { materializeRecurring } from "@/lib/actions/recurring";
+import { getPlanStatus } from "@/lib/subscription";
+import { canBudgetAlerts, canForecast } from "@/lib/plans";
+import { getBudgetAlerts } from "@/lib/budget-alerts";
+import { getUpcomingRecurring } from "@/lib/forecast";
+import { BudgetAlerts } from "@/components/budget-alerts";
+import { ForecastCard } from "@/components/forecast-card";
 import { accountTypeIcon } from "@/lib/account-types";
 import { AppShell } from "@/components/app-shell";
 import { Landing } from "@/components/landing";
@@ -32,6 +39,13 @@ export default async function DashboardPage() {
   const currency = user.currency;
 
   await ensureDefaultAccount(userId);
+  // Génère les opérations récurrentes dues (Premium ; sans effet sinon).
+  await materializeRecurring(userId);
+
+  const status = await getPlanStatus(userId);
+  const budgetAlerts = canBudgetAlerts(status.plan)
+    ? await getBudgetAlerts(userId)
+    : [];
 
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -95,6 +109,11 @@ export default async function DashboardPage() {
     .reduce((s, t) => s + t.amountCents, 0);
   const balanceCents = incomeCents - expenseCents;
 
+  // Solde prévisionnel (Premium) : récurrences à venir d'ici la fin du mois.
+  const upcoming = canForecast(status.plan)
+    ? await getUpcomingRecurring(userId, now, monthEnd)
+    : { incomeCents: 0, expenseCents: 0, occurrences: 0 };
+
   // Répartition des dépenses par catégorie (ce mois).
   const byCat = new Map<string, { name: string; value: number; color: string }>();
   for (const t of monthTx) {
@@ -117,6 +136,14 @@ export default async function DashboardPage() {
           monthLabel={monthLabel}
           currency={currency}
         />
+
+        <ForecastCard
+          currentNetCents={balanceCents}
+          upcoming={upcoming}
+          currency={currency}
+        />
+
+        <BudgetAlerts alerts={budgetAlerts} currency={currency} />
 
         {/* Revenus / Dépenses */}
         <div className="grid grid-cols-2 gap-3">

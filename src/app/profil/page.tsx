@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Tag, ListOrdered, Wallet, ShieldCheck, PiggyBank, Crown, ChevronRight } from "lucide-react";
+import { Tag, ListOrdered, Wallet, ShieldCheck, PiggyBank, Crown, ChevronRight, Repeat } from "lucide-react";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { isAdmin } from "@/lib/admin";
@@ -91,6 +91,12 @@ export default async function ProfilePage() {
             </>
           )}
           <LinkRow href="/comptes" icon={<Wallet className="h-5 w-5" />} label="Comptes" />
+          <div className="border-t border-border" />
+          <LinkRow
+            href="/recurrences"
+            icon={<Repeat className="h-5 w-5" />}
+            label="Opérations récurrentes"
+          />
           <div className="border-t border-border" />
           <LinkRow href="/epargne" icon={<PiggyBank className="h-5 w-5" />} label="Épargne" />
           <div className="border-t border-border" />

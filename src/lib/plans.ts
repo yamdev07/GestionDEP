@@ -34,10 +34,16 @@ export function priceCentsFor(plan: PlanKey, cycle: Cycle): number {
 }
 
 // Fonctionnalités par rang de plan.
+// Essentiel (rang 1) : tout illimité + budgets + Journal + statistiques.
 export const isUnlimited = (plan: string) => planRank(plan) >= 1; // portefeuilles/opérations/objectifs
 export const canBudgets = (plan: string) => planRank(plan) >= 1;
+export const canJournal = (plan: string) => planRank(plan) >= 1;
 export const canAdvancedStats = (plan: string) => planRank(plan) >= 1;
+// Premium (rang 2) : exclusivités qui justifient le tarif supérieur.
 export const canExport = (plan: string) => planRank(plan) >= 2;
+export const canRecurring = (plan: string) => planRank(plan) >= 2; // opérations récurrentes
+export const canBudgetAlerts = (plan: string) => planRank(plan) >= 2; // alertes de budget
+export const canForecast = (plan: string) => planRank(plan) >= 2; // solde prévisionnel
 
 export const PLAN_LABELS: Record<string, string> = {
   GRATUIT: "Gratuit",
