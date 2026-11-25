@@ -5,6 +5,10 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { ensureDefaultAccount } from "@/lib/actions/accounts";
 import { materializeRecurring } from "@/lib/actions/recurring";
+import { getPlanStatus } from "@/lib/subscription";
+import { canBudgetAlerts } from "@/lib/plans";
+import { getBudgetAlerts } from "@/lib/budget-alerts";
+import { BudgetAlerts } from "@/components/budget-alerts";
 import { accountTypeIcon } from "@/lib/account-types";
 import { AppShell } from "@/components/app-shell";
 import { Landing } from "@/components/landing";
@@ -35,6 +39,11 @@ export default async function DashboardPage() {
   await ensureDefaultAccount(userId);
   // Génère les opérations récurrentes dues (Premium ; sans effet sinon).
   await materializeRecurring(userId);
+
+  const status = await getPlanStatus(userId);
+  const budgetAlerts = canBudgetAlerts(status.plan)
+    ? await getBudgetAlerts(userId)
+    : [];
 
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -120,6 +129,8 @@ export default async function DashboardPage() {
           monthLabel={monthLabel}
           currency={currency}
         />
+
+        <BudgetAlerts alerts={budgetAlerts} currency={currency} />
 
         {/* Revenus / Dépenses */}
         <div className="grid grid-cols-2 gap-3">
