@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { activatePaymentById } from "@/lib/actions/subscription";
 import { AppShell } from "@/components/app-shell";
 import { Card, Button } from "@/components/ui";
+import { PendingPoller } from "./pending-poller";
 
 export default async function PaymentReturnPage({
   searchParams,
@@ -50,6 +51,7 @@ export default async function PaymentReturnPage({
           {view.icon}
           <h1 className="text-xl font-bold">{view.title}</h1>
           <p className="text-sm text-muted">{view.text}</p>
+          {state === "pending" && pid && <PendingPoller pid={pid} />}
           <Link href="/abonnement" className="w-full">
             <Button className="w-full">Voir mon abonnement</Button>
           </Link>
