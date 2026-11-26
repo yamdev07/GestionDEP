@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getPlanStatus } from "@/lib/subscription";
 import { canBudgetAlerts } from "@/lib/plans";
 import { notifyBudgetAlerts } from "@/lib/budget-alerts";
+import { processMonthRollover } from "@/lib/budget-periods";
 import { isPushConfigured } from "@/lib/push";
 
 export const runtime = "nodejs";
@@ -45,6 +46,8 @@ async function handle(req: Request) {
     const status = await getPlanStatus(userId);
     if (!canBudgetAlerts(status.plan)) continue; // Premium uniquement
     users += 1;
+    // Bascule de mois (clôture + report + push de rappel) puis alertes.
+    await processMonthRollover(userId).catch(() => {});
     sent += await notifyBudgetAlerts(userId);
   }
 

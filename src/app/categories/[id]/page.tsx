@@ -3,6 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import { ArrowLeft, CalendarPlus } from "lucide-react";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { getCategoryRollover } from "@/lib/budget-periods";
 import { AppShell } from "@/components/app-shell";
 import {
   TransactionRow,
@@ -73,7 +74,11 @@ export default async function CategoryDetailPage({
   const totalCents = agg._sum.amountCents ?? 0;
   const count = agg._count;
   const monthCents = monthAgg._sum.amountCents ?? 0;
-  const budgetCents = category.budget?.amountCents ?? 0;
+  const baseBudgetCents = category.budget?.amountCents ?? 0;
+  // Plafond EFFECTIF du mois = base + report du mois précédent.
+  const rolloverCents =
+    baseBudgetCents > 0 ? await getCategoryRollover(userId, category.id) : 0;
+  const budgetCents = baseBudgetCents + rolloverCents;
   const budgetPct =
     budgetCents > 0 ? Math.round((monthCents / budgetCents) * 100) : 0;
 
@@ -175,6 +180,20 @@ export default async function CategoryDetailPage({
             <p className="mt-1.5 text-xs text-muted tabular-nums">
               {formatMoney(monthCents, currency)} / {formatMoney(budgetCents, currency)}
             </p>
+            {rolloverCents !== 0 && (
+              <p className="mt-0.5 text-xs text-muted tabular-nums">
+                Plafond de base {formatMoney(baseBudgetCents, currency)} · report{" "}
+                <span
+                  style={{
+                    color:
+                      rolloverCents >= 0 ? "var(--success)" : "var(--danger)",
+                  }}
+                >
+                  {rolloverCents >= 0 ? "+" : ""}
+                  {formatMoney(rolloverCents, currency)}
+                </span>
+              </p>
+            )}
           </Card>
         )}
 

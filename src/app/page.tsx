@@ -5,12 +5,18 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { ensureDefaultAccount } from "@/lib/actions/accounts";
 import { materializeRecurring } from "@/lib/actions/recurring";
+import {
+  processMonthRollover,
+  monthKey,
+  addMonthKey,
+} from "@/lib/budget-periods";
 import { getPlanStatus } from "@/lib/subscription";
 import { canBudgetAlerts, canForecast } from "@/lib/plans";
 import { getBudgetAlerts } from "@/lib/budget-alerts";
 import { getUpcomingRecurring } from "@/lib/forecast";
 import { BudgetAlerts } from "@/components/budget-alerts";
 import { AlertNotifier } from "@/components/alert-notifier";
+import { MonthResetBanner } from "@/components/month-reset-banner";
 import { ForecastCard } from "@/components/forecast-card";
 import { accountTypeIcon } from "@/lib/account-types";
 import { AppShell } from "@/components/app-shell";
@@ -42,6 +48,14 @@ export default async function DashboardPage() {
   await ensureDefaultAccount(userId);
   // Génère les opérations récurrentes dues (Premium ; sans effet sinon).
   await materializeRecurring(userId);
+  // Clôture/report des budgets au changement de mois (sans effet si pas de budget).
+  await processMonthRollover(userId).catch(() => {});
+
+  // Bannière "nouveau mois" : des budgets ont-ils été reportés dans le mois courant ?
+  const currentMonthKey = monthKey(new Date());
+  const rolledOverCount = await prisma.budgetPeriod.count({
+    where: { userId, period: addMonthKey(currentMonthKey, -1) },
+  });
 
   const status = await getPlanStatus(userId);
   const budgetAlerts = canBudgetAlerts(status.plan)
@@ -144,6 +158,7 @@ export default async function DashboardPage() {
           currency={currency}
         />
 
+        <MonthResetBanner period={currentMonthKey} count={rolledOverCount} />
         <BudgetAlerts alerts={budgetAlerts} currency={currency} />
         <AlertNotifier
           alerts={budgetAlerts.map((a) => ({

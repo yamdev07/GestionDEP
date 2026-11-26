@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { sendPushToUser, isPushConfigured } from "@/lib/push";
+import { getRolloverByCategory } from "@/lib/budget-periods";
 import { formatMoney } from "@/lib/utils";
 
 export type BudgetAlert = {
@@ -43,11 +44,18 @@ export async function getBudgetAlerts(userId: string): Promise<BudgetAlert[]> {
     if (g.categoryId) spentByCat.set(g.categoryId, g._sum.amountCents ?? 0);
   }
 
+  // Report entrant par catégorie : plafond effectif = base + report du mois passé.
+  const rollover = await getRolloverByCategory(userId);
+
   const alerts: BudgetAlert[] = [];
   for (const b of budgets) {
+    const effCap = b.amountCents + (rollover.get(b.categoryId) ?? 0);
     if (b.amountCents <= 0) continue;
     const spent = spentByCat.get(b.categoryId) ?? 0;
-    const pct = Math.round((spent / b.amountCents) * 100);
+    // Plafond effectif épuisé (report très négatif) → considéré comme dépassé.
+    const pct =
+      effCap > 0 ? Math.round((spent / effCap) * 100) : spent > 0 ? 100 : 0;
+    const over = effCap > 0 ? spent >= effCap : spent > 0;
     if (pct >= 80) {
       alerts.push({
         categoryId: b.categoryId,
@@ -55,9 +63,9 @@ export async function getBudgetAlerts(userId: string): Promise<BudgetAlert[]> {
         color: b.category.color,
         icon: b.category.icon,
         spentCents: spent,
-        budgetCents: b.amountCents,
+        budgetCents: Math.max(0, effCap),
         pct,
-        over: pct >= 100,
+        over,
       });
     }
   }

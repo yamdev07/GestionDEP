@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Tag } from "lucide-react";
+import { Tag, Archive } from "lucide-react";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { AppShell } from "@/components/app-shell";
@@ -10,6 +10,7 @@ import { Card } from "@/components/ui";
 import { getPlanStatus } from "@/lib/subscription";
 import { canBudgetAlerts } from "@/lib/plans";
 import { getBudgetAlerts } from "@/lib/budget-alerts";
+import { closeDueMonths } from "@/lib/budget-periods";
 
 export default async function BudgetsPage() {
   const session = await auth();
@@ -21,6 +22,9 @@ export default async function BudgetsPage() {
     select: { currency: true },
   });
   if (!user) redirect("/login");
+
+  // Archive les mois échus (report inclus) avant d'afficher.
+  await closeDueMonths(userId);
 
   const status = await getPlanStatus(userId);
   const alerts = canBudgetAlerts(status.plan) ? await getBudgetAlerts(userId) : [];
@@ -68,9 +72,18 @@ export default async function BudgetsPage() {
   return (
     <AppShell>
       <div className="space-y-5">
-        <div>
-          <h1 className="text-2xl font-bold">Budgets</h1>
-          <p className="text-sm capitalize text-muted">{monthLabel}</p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold">Budgets</h1>
+            <p className="text-sm capitalize text-muted">{monthLabel}</p>
+          </div>
+          <Link
+            href="/budgets/historique"
+            className="flex h-10 items-center gap-1.5 rounded-xl border border-border px-3.5 text-sm font-medium text-foreground transition hover:bg-surface-muted"
+          >
+            <Archive className="h-4 w-4" />
+            <span className="hidden sm:inline">Historique</span>
+          </Link>
         </div>
 
         <BudgetAlerts alerts={alerts} currency={user.currency} />

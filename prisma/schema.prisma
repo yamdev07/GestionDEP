@@ -81,6 +81,29 @@ model User {
 
   pushSubscriptions  PushSubscription[]
   alertNotifications AlertNotification[]
+  budgetPeriods      BudgetPeriod[]
+}
+
+/// Snapshot d'un budget de catégorie pour un mois clôturé (archive + report).
+/// Auto-suffisant (nom/couleur figés) : conservé même si la catégorie est supprimée.
+model BudgetPeriod {
+  id            String   @id @default(cuid())
+  userId        String
+  categoryId    String
+  categoryName  String
+  categoryColor String   @default("#6366f1")
+  categoryIcon  String   @default("tag")
+  period        String // "YYYY-MM" — mois couvert par ce snapshot
+  budgetCents   Int // plafond EFFECTIF du mois (base + report entrant)
+  spentCents    Int // dépensé réel du mois (figé à la clôture)
+  rolloverCents Int      @default(0) // report SORTANT vers le mois suivant (budget - spent)
+  closedAt      DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, categoryId, period])
+  @@index([userId])
+  @@index([userId, period])
 }
 
 /// Abonnement Web Push d'un appareil/navigateur (pour les notifications d'alerte).
