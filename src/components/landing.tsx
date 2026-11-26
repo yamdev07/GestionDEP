@@ -10,7 +10,7 @@ import {
   Check,
   Crown,
 } from "lucide-react";
-import { PLANS, FREE_LIMITS } from "@/lib/plans";
+import { PLANS } from "@/lib/plans";
 import { formatMoney } from "@/lib/utils";
 
 const FEATURES = [
@@ -47,18 +47,10 @@ const FEATURES = [
 ];
 
 const PRICING: {
-  key: "GRATUIT" | "ESSENTIEL" | "PREMIUM";
+  key: "ESSENTIEL" | "PREMIUM";
   features: string[];
   highlight?: boolean;
 }[] = [
-  {
-    key: "GRATUIT",
-    features: [
-      `${FREE_LIMITS.accounts} portefeuille`,
-      `${FREE_LIMITS.txPerMonth} opérations / mois`,
-      `${FREE_LIMITS.goals} objectif d'épargne`,
-    ],
-  },
   {
     key: "ESSENTIEL",
     features: [
@@ -185,9 +177,9 @@ export function Landing() {
       <section id="tarifs" className="mx-auto max-w-5xl px-4 pb-16 scroll-mt-6">
         <h2 className="mb-2 text-center text-2xl font-bold">Des tarifs simples</h2>
         <p className="mb-8 text-center text-muted">
-          Commence gratuitement, passe à un plan payant quand tu veux.
+          Deux formules, sans engagement. Change ou arrête quand tu veux.
         </p>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="mx-auto grid max-w-2xl grid-cols-1 gap-4 sm:grid-cols-2">
           {PRICING.map(({ key, features, highlight }) => {
             const plan = PLANS[key];
             return (
@@ -206,20 +198,16 @@ export function Landing() {
                   </span>
                 )}
                 <h3 className="flex items-center gap-1.5 font-bold">
-                  {key !== "GRATUIT" && <Crown className="h-4 w-4 text-primary" />}
+                  <Crown className="h-4 w-4 text-primary" />
                   {plan.label}
                 </h3>
                 <p className="mt-1 text-3xl font-extrabold">
                   {formatMoney(plan.monthlyCents, "XOF")}
-                  {key !== "GRATUIT" && (
-                    <span className="text-base font-medium text-muted"> / mois</span>
-                  )}
+                  <span className="text-base font-medium text-muted"> / mois</span>
                 </p>
-                {key !== "GRATUIT" && (
-                  <p className="text-xs text-muted">
-                    ou {formatMoney(plan.annualCents, "XOF")} / an
-                  </p>
-                )}
+                <p className="text-xs text-muted">
+                  ou {formatMoney(plan.annualCents, "XOF")} / an
+                </p>
                 <ul className="mt-4 flex-1 space-y-2 text-sm">
                   {features.map((t) => (
                     <li key={t} className="flex items-center gap-2">
@@ -228,15 +216,15 @@ export function Landing() {
                   ))}
                 </ul>
                 <Link
-                  href={key === "GRATUIT" ? "/register" : `/register?plan=${key}`}
+                  href={`/register?plan=${key}`}
                   className={
                     "mt-5 flex h-11 items-center justify-center gap-2 rounded-xl font-semibold transition active:scale-[0.99] " +
-                    (highlight || key === "PREMIUM"
+                    (highlight
                       ? "gradient-primary text-white"
                       : "border border-border hover:bg-surface-muted")
                   }
                 >
-                  {key === "GRATUIT" ? "Commencer gratuitement" : `Choisir ${plan.label}`}
+                  Choisir {plan.label}
                 </Link>
               </div>
             );
