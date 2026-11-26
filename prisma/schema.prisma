@@ -78,6 +78,39 @@ model User {
   subscriptions Subscription[]
   payments      Payment[]
   recurrings    RecurringTransaction[]
+
+  pushSubscriptions  PushSubscription[]
+  alertNotifications AlertNotification[]
+}
+
+/// Abonnement Web Push d'un appareil/navigateur (pour les notifications d'alerte).
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String // clé publique du client (chiffrement)
+  auth      String // secret d'authentification du client
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+/// Trace d'une alerte de budget déjà notifiée, pour ne pas renotifier en boucle.
+/// Une ligne par (utilisateur, catégorie, mois, niveau).
+model AlertNotification {
+  id         String   @id @default(cuid())
+  userId     String
+  categoryId String
+  period     String // "YYYY-MM" (mois concerné)
+  level      String // "NEAR" (>=80%) ou "OVER" (>=100%)
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, categoryId, period, level])
+  @@index([userId])
 }
 
 /// Historique des abonnements : une ligne par activation / renouvellement / changement.

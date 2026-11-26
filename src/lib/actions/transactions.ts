@@ -6,6 +6,8 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { parseAmountToCents } from "@/lib/utils";
 import { getPlanStatus, FREE_LIMITS, monthRange } from "@/lib/subscription";
+import { canBudgetAlerts } from "@/lib/plans";
+import { notifyBudgetAlerts } from "@/lib/budget-alerts";
 
 async function requireUserId(): Promise<string> {
   const session = await auth();
@@ -120,6 +122,12 @@ export async function createTransaction(
   });
 
   revalidateAll();
+
+  // Notifie en temps réel si une dépense fait franchir un seuil de budget (Premium).
+  if (parsed.data.type === "EXPENSE" && canBudgetAlerts(status.plan)) {
+    await notifyBudgetAlerts(userId).catch(() => {});
+  }
+
   return { ok: true };
 }
 

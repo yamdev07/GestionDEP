@@ -10,6 +10,7 @@ import { canBudgetAlerts, canForecast } from "@/lib/plans";
 import { getBudgetAlerts } from "@/lib/budget-alerts";
 import { getUpcomingRecurring } from "@/lib/forecast";
 import { BudgetAlerts } from "@/components/budget-alerts";
+import { AlertNotifier } from "@/components/alert-notifier";
 import { ForecastCard } from "@/components/forecast-card";
 import { accountTypeIcon } from "@/lib/account-types";
 import { AppShell } from "@/components/app-shell";
@@ -144,6 +145,17 @@ export default async function DashboardPage() {
         />
 
         <BudgetAlerts alerts={budgetAlerts} currency={currency} />
+        <AlertNotifier
+          alerts={budgetAlerts.map((a) => ({
+            categoryId: a.categoryId,
+            name: a.name,
+            pct: a.pct,
+            over: a.over,
+            spentCents: a.spentCents,
+            budgetCents: a.budgetCents,
+          }))}
+          currency={currency}
+        />
 
         {/* Revenus / Dépenses */}
         <div className="grid grid-cols-2 gap-3">

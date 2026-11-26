@@ -1,4 +1,6 @@
 import { prisma } from "@/lib/prisma";
+import { sendPushToUser, isPushConfigured } from "@/lib/push";
+import { formatMoney } from "@/lib/utils";
 
 export type BudgetAlert = {
   categoryId: string;
@@ -60,4 +62,75 @@ export async function getBudgetAlerts(userId: string): Promise<BudgetAlert[]> {
     }
   }
   return alerts.sort((a, b) => b.pct - a.pct);
+}
+
+/** Niveau de notification d'une alerte. */
+function alertLevel(a: BudgetAlert): "NEAR" | "OVER" {
+  return a.over ? "OVER" : "NEAR";
+}
+
+/**
+ * Évalue les alertes de budget d'un utilisateur et envoie une notification push
+ * pour chaque NOUVELLE alerte (niveau non encore notifié ce mois-ci).
+ * Idempotent : appelable en boucle (cron) sans spammer.
+ * Renvoie le nombre de notifications envoyées.
+ *
+ * Le gating par plan (Premium) est à la charge de l'appelant.
+ */
+export async function notifyBudgetAlerts(userId: string): Promise<number> {
+  if (!isPushConfigured()) return 0;
+
+  const alerts = await getBudgetAlerts(userId);
+  if (alerts.length === 0) return 0;
+
+  const now = new Date();
+  const period = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { currency: true },
+  });
+  const currency = user?.currency ?? "XOF";
+
+  let sent = 0;
+  for (const a of alerts) {
+    const level = alertLevel(a);
+    // Déjà notifié pour ce mois + ce niveau ? On passe.
+    const already = await prisma.alertNotification.findUnique({
+      where: {
+        userId_categoryId_period_level: {
+          userId,
+          categoryId: a.categoryId,
+          period,
+          level,
+        },
+      },
+      select: { id: true },
+    });
+    if (already) continue;
+
+    const title = a.over
+      ? `Budget dépassé : ${a.name}`
+      : `Budget bientôt atteint : ${a.name}`;
+    const body = `${formatMoney(a.spentCents, currency)} / ${formatMoney(a.budgetCents, currency)} (${a.pct} %)`;
+
+    const n = await sendPushToUser(userId, {
+      title,
+      body,
+      url: "/budgets",
+      tag: `budget-${a.categoryId}-${period}`,
+    });
+
+    // On enregistre la trace même si aucun appareil n'était joignable, pour
+    // éviter de réévaluer en boucle ; un nouveau niveau (OVER) renotifiera.
+    await prisma.alertNotification
+      .create({
+        data: { userId, categoryId: a.categoryId, period, level },
+      })
+      .catch(() => {});
+
+    sent += n;
+  }
+
+  return sent;
 }
