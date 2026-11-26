@@ -74,8 +74,8 @@ export default async function BudgetsPage() {
       <div className="space-y-5">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold">Budgets</h1>
-            <p className="text-sm capitalize text-muted">{monthLabel}</p>
+            <h1 className="text-2xl font-bold">Mes limites de dépenses</h1>
+            <p className="text-sm text-muted">Vos limites pour {monthLabel}</p>
           </div>
           <Link
             href="/budgets/historique"
@@ -86,7 +86,17 @@ export default async function BudgetsPage() {
           </Link>
         </div>
 
-        <BudgetAlerts alerts={alerts} currency={user.currency} />
+        <p className="-mt-2 text-sm text-muted">
+          Définissez combien vous souhaitez dépenser au maximum dans chaque
+          catégorie. Nous vous avertirons lorsque vous approcherez de cette
+          limite.
+        </p>
+
+        <BudgetAlerts
+          alerts={alerts}
+          currency={user.currency}
+          title="Dépenses à surveiller"
+        />
 
         {rows.length === 0 ? (
           <Card className="flex flex-col items-center gap-3 py-10 text-center">
