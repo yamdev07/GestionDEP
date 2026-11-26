@@ -53,10 +53,14 @@ export function TransactionRow({
     });
   }
 
-  const title = tx.note || tx.categoryName || (isIncome ? "Entrée" : "Dépense");
+  const rawTitle =
+    tx.note || tx.categoryName || (isIncome ? "Argent reçu" : "Dépense");
+  const title = rawTitle.charAt(0).toUpperCase() + rawTitle.slice(1);
   const subtitle = isIncome
-    ? `Entrée · ${dateLabel}`
-    : `${tx.categoryName ?? "Sans catégorie"} · ${dateLabel}`;
+    ? `Argent reçu · ${dateLabel}`
+    : tx.categoryName
+      ? `Catégorie : ${tx.categoryName} · ${dateLabel}`
+      : `Sans catégorie · ${dateLabel}`;
 
   const amountStr = formatMoney(tx.amountCents, currency);
   const color = isIncome ? "var(--success)" : "var(--danger)";

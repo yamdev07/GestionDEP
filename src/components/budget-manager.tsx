@@ -1,12 +1,12 @@
 "use client";
 
 import { useActionState, useEffect, useState, useTransition } from "react";
-import { Check, X } from "lucide-react";
+import { Check } from "lucide-react";
 import { setBudget, deleteBudget } from "@/lib/actions/budgets";
 import type { ActionResult } from "@/lib/actions/transactions";
 import { Button, Card, Input } from "@/components/ui";
 import { CategoryIcon } from "@/components/category-icon";
-import { formatMoney } from "@/lib/utils";
+import { formatMoney, currencySymbol } from "@/lib/utils";
 
 export type BudgetRowData = {
   id: string;
@@ -51,6 +51,8 @@ function BudgetRow({
   const [deletePending, startDelete] = useTransition();
 
   useEffect(() => {
+    // Ferme le formulaire une fois la limite enregistrée (résultat du server action).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (state?.ok) setEditing(false);
   }, [state]);
 
@@ -77,8 +79,10 @@ function BudgetRow({
         <div className="min-w-0 flex-1">
           <p className="truncate font-semibold">{row.name}</p>
           <p className="text-xs text-muted">
-            {formatMoney(row.spentCents, currency)}
-            {hasBudget ? ` / ${formatMoney(row.budgetCents!, currency)}` : ""}
+            Dépensé : {formatMoney(row.spentCents, currency)}
+            {hasBudget
+              ? ` sur une limite de ${formatMoney(row.budgetCents!, currency)}`
+              : ""}
           </p>
         </div>
         {!editing && (
@@ -86,7 +90,7 @@ function BudgetRow({
             onClick={() => setEditing(true)}
             className="shrink-0 text-sm font-medium text-primary hover:underline"
           >
-            {hasBudget ? "Modifier" : "Définir"}
+            {hasBudget ? "Modifier ma limite" : "Fixer une limite"}
           </button>
         )}
       </div>
@@ -104,53 +108,73 @@ function BudgetRow({
             style={{ color: over ? "var(--danger)" : "var(--muted)" }}
           >
             {over
-              ? `Dépassé de ${formatMoney(row.spentCents - row.budgetCents!, currency)}`
-              : `${pct}% utilisé · reste ${formatMoney(row.budgetCents! - row.spentCents, currency)}`}
+              ? `Budget dépassé de ${formatMoney(row.spentCents - row.budgetCents!, currency)}`
+              : `${pct} % de votre limite utilisée · ${formatMoney(row.budgetCents! - row.spentCents, currency)} restant`}
           </p>
         </div>
       )}
 
       {editing && (
-        <form action={formAction} className="mt-3 flex items-center gap-2">
+        <form action={formAction} className="mt-3 space-y-3">
           <input type="hidden" name="categoryId" value={row.id} />
-          <Input
-            name="amount"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            inputMode="decimal"
-            placeholder="Plafond mensuel"
-            autoFocus
-            className="h-10"
-          />
-          <Button type="submit" size="icon" disabled={pending} title="Enregistrer">
-            <Check className="h-4 w-4" />
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            title="Annuler"
-            onClick={() => setEditing(false)}
-          >
-            <X className="h-4 w-4" />
-          </Button>
-          {hasBudget && (
+          <p className="text-sm text-muted">
+            Catégorie :{" "}
+            <span className="font-medium text-foreground">{row.name}</span>
+          </p>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium">
+              Montant maximum à dépenser
+            </label>
+            <div className="relative">
+              <Input
+                name="amount"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                inputMode="decimal"
+                placeholder="Ex : 10 000"
+                autoFocus
+                className="h-11 pr-16"
+              />
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted">
+                {currencySymbol(currency)}
+              </span>
+            </div>
+          </div>
+          <p className="text-sm text-muted">
+            Période :{" "}
+            <span className="font-medium text-foreground">Chaque mois</span>
+          </p>
+          <p className="text-xs text-muted">
+            Nous vous avertirons lorsque vos dépenses approcheront du montant
+            défini.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button type="submit" disabled={pending}>
+              <Check className="h-4 w-4" /> Enregistrer ma limite
+            </Button>
             <Button
               type="button"
-              variant="danger"
-              size="icon"
-              title="Supprimer le budget"
-              disabled={deletePending}
-              onClick={() =>
-                startDelete(async () => {
-                  await deleteBudget(row.id);
-                  setEditing(false);
-                })
-              }
+              variant="outline"
+              onClick={() => setEditing(false)}
             >
-              <X className="h-4 w-4" />
+              Annuler
             </Button>
-          )}
+            {hasBudget && (
+              <Button
+                type="button"
+                variant="danger"
+                disabled={deletePending}
+                onClick={() =>
+                  startDelete(async () => {
+                    await deleteBudget(row.id);
+                    setEditing(false);
+                  })
+                }
+              >
+                Supprimer
+              </Button>
+            )}
+          </div>
         </form>
       )}
 

@@ -1,19 +1,40 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import {
+  useActionState,
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { useRouter } from "next/navigation";
-import { Check, Calendar, Pencil, ArrowDownCircle, ArrowUpCircle } from "lucide-react";
+import {
+  Check,
+  Calendar,
+  Pencil,
+  ArrowDownCircle,
+  ArrowUpCircle,
+  Plus,
+  X,
+} from "lucide-react";
 import {
   createTransaction,
   updateTransaction,
   type ActionResult,
 } from "@/lib/actions/transactions";
+import { quickCreateCategory } from "@/lib/actions/categories";
 import { Button, Input } from "@/components/ui";
 import { UpgradeNotice } from "@/components/upgrade-notice";
 import { cn, toDateInputValue, currencySymbol } from "@/lib/utils";
 
 type Cat = { id: string; name: string; color: string };
 type Acc = { id: string; name: string; color: string };
+
+const PRESET_COLORS = [
+  "#6366f1", "#22c55e", "#3b82f6", "#f59e0b",
+  "#a855f7", "#ef4444", "#ec4899", "#06b6d4",
+  "#14b8a6", "#f97316", "#8b5cf6", "#6b7280",
+];
 
 export type TransactionInitial = {
   id: string;
@@ -62,6 +83,7 @@ export function AddTransactionForm({
   const [date, setDate] = useState(() =>
     toDateInputValue(initial ? new Date(initial.date) : new Date()),
   );
+  const [cats, setCats] = useState<Cat[]>(categories);
   const [categoryId, setCategoryId] = useState<string>(
     initial?.categoryId ?? categories[0]?.id ?? "",
   );
@@ -69,6 +91,38 @@ export function AddTransactionForm({
     initial?.accountId ?? accounts[0]?.id ?? "",
   );
   const amountRef = useRef<HTMLInputElement>(null);
+
+  // Création inline d'une catégorie (sans quitter la saisie).
+  const [creatingCat, setCreatingCat] = useState(false);
+  const [newCatName, setNewCatName] = useState("");
+  const [newCatColor, setNewCatColor] = useState(PRESET_COLORS[0]);
+  const [catError, setCatError] = useState<string | null>(null);
+  const [catPending, startCatCreate] = useTransition();
+
+  function handleCreateCategory() {
+    const name = newCatName.trim();
+    if (!name) {
+      setCatError("Nom requis");
+      return;
+    }
+    setCatError(null);
+    startCatCreate(async () => {
+      const res = await quickCreateCategory(name, newCatColor);
+      if (res.ok) {
+        setCats((prev) =>
+          [...prev, res.category].sort((a, b) =>
+            a.name.localeCompare(b.name, "fr"),
+          ),
+        );
+        setCategoryId(res.category.id);
+        setNewCatName("");
+        setCreatingCat(false);
+        router.refresh();
+      } else {
+        setCatError(res.error);
+      }
+    });
+  }
 
   // Après un enregistrement réussi : édition → liste, création → accueil.
   useEffect(() => {
@@ -80,7 +134,7 @@ export function AddTransactionForm({
 
   const symbol = currencySymbol(currency);
   const isIncome = type === "INCOME";
-  const selectedCat = categories.find((c) => c.id === categoryId);
+  const selectedCat = cats.find((c) => c.id === categoryId);
   const isOther =
     !isIncome && selectedCat?.name?.trim().toLowerCase() === "autre";
 
@@ -175,7 +229,7 @@ export function AddTransactionForm({
           <p className="mb-2 text-sm font-medium text-muted">Catégorie</p>
           <input type="hidden" name="categoryId" value={categoryId} />
           <div className="flex flex-wrap gap-2">
-            {categories.map((c) => {
+            {cats.map((c) => {
               const active = c.id === categoryId;
               return (
                 <button
@@ -198,12 +252,103 @@ export function AddTransactionForm({
                 </button>
               );
             })}
-            {categories.length === 0 && (
-              <span className="text-sm text-muted">
-                Crée d&apos;abord une catégorie.
-              </span>
-            )}
+
+            {/* Puce de création inline */}
+            <button
+              type="button"
+              onClick={() => {
+                setCreatingCat((v) => !v);
+                setCatError(null);
+              }}
+              className={cn(
+                "flex shrink-0 items-center gap-1.5 rounded-full border border-dashed px-3.5 py-2 text-sm font-medium transition",
+                creatingCat
+                  ? "border-primary text-primary"
+                  : "border-border text-muted hover:bg-surface-muted hover:text-foreground",
+              )}
+            >
+              <Plus className="h-4 w-4" />
+              Nouvelle
+            </button>
           </div>
+
+          {/* Panneau de création inline (pas un <form> imbriqué) */}
+          {creatingCat && (
+            <div className="mt-3 space-y-3 rounded-2xl border border-border bg-surface-muted/50 p-3">
+              <div className="flex items-center gap-2">
+                <Input
+                  autoFocus
+                  value={newCatName}
+                  onChange={(e) => setNewCatName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleCreateCategory();
+                    }
+                  }}
+                  placeholder="Nom (ex: Restaurant)"
+                  maxLength={40}
+                  className="h-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCreatingCat(false);
+                    setCatError(null);
+                  }}
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-muted transition hover:bg-surface hover:text-foreground"
+                  title="Annuler"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {PRESET_COLORS.map((c) => (
+                  <button
+                    type="button"
+                    key={c}
+                    onClick={() => setNewCatColor(c)}
+                    className={cn(
+                      "h-7 w-7 rounded-full transition",
+                      newCatColor === c
+                        ? "ring-2 ring-offset-2 ring-offset-surface"
+                        : "",
+                    )}
+                    style={{
+                      backgroundColor: c,
+                      boxShadow:
+                        newCatColor === c ? `0 0 0 2px ${c}` : undefined,
+                    }}
+                    aria-label={`Couleur ${c}`}
+                  />
+                ))}
+              </div>
+
+              {catError && (
+                <p className="rounded-lg bg-danger/10 px-3 py-1.5 text-sm text-danger">
+                  {catError}
+                </p>
+              )}
+
+              <Button
+                type="button"
+                size="md"
+                onClick={handleCreateCategory}
+                disabled={catPending || !newCatName.trim()}
+                className="w-full sm:w-auto"
+              >
+                <Plus className="h-4 w-4" />
+                {catPending ? "Création…" : "Créer la catégorie"}
+              </Button>
+            </div>
+          )}
+
+          {cats.length === 0 && !creatingCat && (
+            <span className="text-sm text-muted">
+              Crée d&apos;abord une catégorie avec « + Nouvelle ».
+            </span>
+          )}
         </div>
       )}
 

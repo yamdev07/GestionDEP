@@ -5,10 +5,12 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { isAdmin } from "@/lib/admin";
 import { getPlanStatus } from "@/lib/subscription";
-import { PLAN_LABELS } from "@/lib/plans";
+import { PLAN_LABELS, canBudgetAlerts } from "@/lib/plans";
+import { getVapidPublicKey } from "@/lib/push";
 import { AppShell } from "@/components/app-shell";
 import { ProfileForm } from "@/components/profile-form";
 import { PasswordForm } from "@/components/password-form";
+import { PushManager } from "@/components/push-manager";
 import { SignOutButton } from "@/components/sign-out-button";
 import { DeleteAccountForm } from "@/components/delete-account-form";
 import { Card } from "@/components/ui";
@@ -57,6 +59,14 @@ export default async function ProfilePage() {
           <h2 className="mb-4 text-base font-bold">Sécurité</h2>
           <PasswordForm />
         </Card>
+
+        {/* Notifications (alertes de budget — Premium) */}
+        {canBudgetAlerts(plan.plan) && (
+          <Card>
+            <h2 className="mb-4 text-base font-bold">Notifications</h2>
+            <PushManager vapidPublicKey={getVapidPublicKey()} />
+          </Card>
+        )}
 
         {/* Raccourcis */}
         <Card className="p-0">

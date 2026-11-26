@@ -1,7 +1,8 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { CalendarPlus, Plus, Trash2 } from "lucide-react";
 import {
   createCategory,
   deleteCategory,
@@ -120,19 +121,33 @@ function CategoryItem({ cat, currency }: { cat: CatView; currency: string }) {
 
   return (
     <li className={`flex items-center gap-3 py-3 ${pending ? "opacity-40" : ""}`}>
-      <CategoryIcon
-        icon={cat.icon}
-        color={cat.color}
-        className="h-10 w-10 shrink-0 rounded-xl"
-        size={18}
-      />
-      <div className="min-w-0 flex-1">
-        <p className="truncate font-medium">{cat.name}</p>
-        <p className="text-xs text-muted">
-          {cat.count} dépense{cat.count > 1 ? "s" : ""} ·{" "}
-          {formatMoney(cat.totalCents, currency)}
-        </p>
-      </div>
+      <Link
+        href={`/categories/${cat.id}`}
+        className="flex min-w-0 flex-1 items-center gap-3 rounded-xl transition hover:opacity-80"
+        title="Voir le détail des dépenses"
+      >
+        <CategoryIcon
+          icon={cat.icon}
+          color={cat.color}
+          className="h-10 w-10 shrink-0 rounded-xl"
+          size={18}
+        />
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-medium">{cat.name}</p>
+          <p className="text-xs text-muted">
+            {cat.count} dépense{cat.count > 1 ? "s" : ""} ·{" "}
+            {formatMoney(cat.totalCents, currency)}
+          </p>
+        </div>
+      </Link>
+      <Link
+        href={`/categories/${cat.id}/saisie`}
+        title="Saisir des dépenses passées"
+        className="flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-sm font-medium text-muted transition hover:bg-primary/10 hover:text-primary"
+      >
+        <CalendarPlus className="h-4 w-4" />
+        <span className="hidden sm:inline">Saisir</span>
+      </Link>
       <button
         onClick={onDelete}
         disabled={pending}

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Tag } from "lucide-react";
+import { Tag, Archive } from "lucide-react";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { AppShell } from "@/components/app-shell";
@@ -10,6 +10,7 @@ import { Card } from "@/components/ui";
 import { getPlanStatus } from "@/lib/subscription";
 import { canBudgetAlerts } from "@/lib/plans";
 import { getBudgetAlerts } from "@/lib/budget-alerts";
+import { closeDueMonths } from "@/lib/budget-periods";
 
 export default async function BudgetsPage() {
   const session = await auth();
@@ -21,6 +22,9 @@ export default async function BudgetsPage() {
     select: { currency: true },
   });
   if (!user) redirect("/login");
+
+  // Archive les mois échus (report inclus) avant d'afficher.
+  await closeDueMonths(userId);
 
   const status = await getPlanStatus(userId);
   const alerts = canBudgetAlerts(status.plan) ? await getBudgetAlerts(userId) : [];
@@ -68,12 +72,31 @@ export default async function BudgetsPage() {
   return (
     <AppShell>
       <div className="space-y-5">
-        <div>
-          <h1 className="text-2xl font-bold">Budgets</h1>
-          <p className="text-sm capitalize text-muted">{monthLabel}</p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold">Mes limites de dépenses</h1>
+            <p className="text-sm text-muted">Vos limites pour {monthLabel}</p>
+          </div>
+          <Link
+            href="/budgets/historique"
+            className="flex h-10 items-center gap-1.5 rounded-xl border border-border px-3.5 text-sm font-medium text-foreground transition hover:bg-surface-muted"
+          >
+            <Archive className="h-4 w-4" />
+            <span className="hidden sm:inline">Historique</span>
+          </Link>
         </div>
 
-        <BudgetAlerts alerts={alerts} currency={user.currency} />
+        <p className="-mt-2 text-sm text-muted">
+          Définissez combien vous souhaitez dépenser au maximum dans chaque
+          catégorie. Nous vous avertirons lorsque vous approcherez de cette
+          limite.
+        </p>
+
+        <BudgetAlerts
+          alerts={alerts}
+          currency={user.currency}
+          title="Dépenses à surveiller"
+        />
 
         {rows.length === 0 ? (
           <Card className="flex flex-col items-center gap-3 py-10 text-center">

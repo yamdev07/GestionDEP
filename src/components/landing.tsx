@@ -4,69 +4,120 @@ import {
   TrendingUp,
   PieChart,
   Target,
-  Smartphone,
-  ShieldCheck,
+  PiggyBank,
+  Landmark,
+  Pencil,
   ArrowRight,
   Check,
   Crown,
 } from "lucide-react";
-import { PLANS, FREE_LIMITS } from "@/lib/plans";
+import { PLANS } from "@/lib/plans";
 import { formatMoney } from "@/lib/utils";
 
+// Ce que l'utilisateur gagne, en langage simple (pas de jargon).
 const FEATURES = [
   {
     icon: TrendingUp,
-    title: "Entrées & dépenses",
-    text: "Enregistrez chaque entrée et sortie d'argent, et suivez votre solde en temps réel.",
+    title: "Suivez votre argent",
+    text: "Consultez vos revenus, vos dépenses et votre argent disponible au même endroit.",
   },
   {
-    icon: Wallet,
-    title: "Comptes multiples",
-    text: "Espèces, Mobile Money (Wave, Orange Money…), banque : chaque portefeuille avec son solde.",
+    icon: Pencil,
+    title: "Enregistrez vos dépenses",
+    text: "Notez chaque achat pour ne plus oublier où votre argent est passé.",
   },
   {
     icon: Target,
-    title: "Budgets & épargne",
-    text: "Fixez des plafonds par catégorie et mettez de l'argent de côté avec des objectifs.",
+    title: "Fixez vos limites",
+    text: "Définissez combien vous souhaitez dépenser pour le transport, le logement, les loisirs et autres besoins.",
+  },
+  {
+    icon: PiggyBank,
+    title: "Suivez vos économies",
+    text: "Mettez de l'argent de côté pour réaliser vos projets.",
   },
   {
     icon: PieChart,
-    title: "Statistiques claires",
-    text: "Répartition des dépenses, tendance sur 6 mois, entrées vs dépenses.",
+    title: "Comprenez vos dépenses",
+    text: "Découvrez les catégories dans lesquelles vous dépensez le plus.",
   },
   {
-    icon: Smartphone,
-    title: "Installable (PWA)",
-    text: "Ajoutez MonBudget à votre écran d'accueil et utilisez-la comme une vraie application.",
+    icon: Landmark,
+    title: "Gérez plusieurs comptes",
+    text: "Retrouvez votre argent liquide et celui de vos différents comptes au même endroit.",
+  },
+];
+
+const STEPS = [
+  {
+    title: "Créez votre compte",
+    text: "Inscrivez-vous pour commencer à organiser votre argent.",
   },
   {
-    icon: ShieldCheck,
-    title: "Privé & sécurisé",
-    text: "Vos données restent protégées. Connexion sécurisée, mots de passe chiffrés.",
+    title: "Ajoutez vos revenus et dépenses",
+    text: "Enregistrez l'argent que vous recevez et celui que vous dépensez.",
+  },
+  {
+    title: "Gardez le contrôle",
+    text: "Consultez votre solde, surveillez vos dépenses et préparez vos économies.",
+  },
+];
+
+const WHY = [
+  {
+    title: "Ne perdez plus le fil de vos dépenses",
+    text: "Retrouvez facilement vos achats et paiements.",
+  },
+  {
+    title: "Évitez les mauvaises surprises",
+    text: "Surveillez vos limites de dépenses.",
+  },
+  {
+    title: "Sachez où va votre argent",
+    text: "Consultez un résumé clair de vos finances.",
+  },
+  {
+    title: "Préparez vos projets",
+    text: "Suivez l'argent que vous souhaitez économiser.",
+  },
+];
+
+const FAQ = [
+  {
+    q: "À quoi sert MonBudget ?",
+    a: "À suivre vos revenus, vos dépenses et vos économies.",
+  },
+  {
+    q: "Est-ce difficile à utiliser ?",
+    a: "Non, l'application est conçue pour faciliter la gestion de votre argent.",
+  },
+  {
+    q: "Puis-je suivre mes dépenses chaque mois ?",
+    a: "Oui, vous pouvez consulter vos dépenses sur différentes périodes.",
+  },
+  {
+    q: "Puis-je gérer plusieurs comptes ?",
+    a: "Oui, vous pouvez regrouper vos différents comptes dans l'application.",
+  },
+  {
+    q: "Puis-je utiliser MonBudget sur téléphone ?",
+    a: "Oui, MonBudget s'installe sur votre téléphone et s'utilise comme une application.",
   },
 ];
 
 const PRICING: {
-  key: "GRATUIT" | "ESSENTIEL" | "PREMIUM";
+  key: "ESSENTIEL" | "PREMIUM";
   features: string[];
   highlight?: boolean;
 }[] = [
   {
-    key: "GRATUIT",
-    features: [
-      `${FREE_LIMITS.accounts} portefeuille`,
-      `${FREE_LIMITS.txPerMonth} opérations / mois`,
-      `${FREE_LIMITS.goals} objectif d'épargne`,
-    ],
-  },
-  {
     key: "ESSENTIEL",
     features: [
-      "Portefeuilles illimités",
-      "Opérations illimitées",
-      "Budgets par catégorie",
-      "Journal des dépenses",
-      "Statistiques avancées",
+      "Comptes illimités",
+      "Dépenses et revenus illimités",
+      "Limites de dépenses par catégorie",
+      "Historique de vos dépenses",
+      "Résumés détaillés",
     ],
   },
   {
@@ -74,10 +125,10 @@ const PRICING: {
     highlight: true,
     features: [
       "Tout l'Essentiel",
-      "Opérations récurrentes (loyer, salaire, abonnements…)",
-      "Alertes de budget",
-      "Solde prévisionnel",
-      "Export des données",
+      "Dépenses automatiques (loyer, salaire, abonnements…)",
+      "Alertes quand vous approchez d'une limite",
+      "Estimation de ce qu'il vous restera en fin de mois",
+      "Export de vos données",
       "Support prioritaire",
     ],
   },
@@ -113,47 +164,50 @@ export function Landing() {
       {/* Hero */}
       <section className="mx-auto max-w-5xl px-4 pb-10 pt-8 text-center sm:pt-16">
         <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-          Gestion de budget personnel
+          Gérez votre argent simplement
         </span>
         <h1 className="mx-auto mt-5 max-w-2xl text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl">
-          Gardez le contrôle de votre argent,{" "}
+          Votre argent mérite une{" "}
           <span className="bg-gradient-to-r from-primary-from to-primary-to bg-clip-text text-transparent">
-            sans effort
+            meilleure organisation
           </span>
+          .
         </h1>
         <p className="mx-auto mt-4 max-w-xl text-base text-muted sm:text-lg">
-          MonBudget vous aide à suivre vos entrées et dépenses, gérer vos
-          comptes (espèces, Mobile Money, banque), épargner et visualiser où
-          part votre argent — le tout en Francs CFA.
+          Suivez vos revenus, contrôlez vos dépenses et sachez toujours combien
+          il vous reste.
         </p>
         <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link
-            href="#tarifs"
+            href="/register"
             className="gradient-primary flex h-12 w-full items-center justify-center gap-2 rounded-2xl px-6 text-base font-semibold text-white shadow-lg shadow-primary/25 transition active:scale-[0.99] sm:w-auto"
           >
-            Commencer <ArrowRight className="h-5 w-5" />
+            Commencer gratuitement <ArrowRight className="h-5 w-5" />
           </Link>
           <Link
-            href="/login"
+            href="#fonctionnalites"
             className="flex h-12 w-full items-center justify-center rounded-2xl border border-border px-6 text-base font-medium transition hover:bg-surface-muted sm:w-auto"
           >
-            J&apos;ai déjà un compte
+            Découvrir l&apos;application
           </Link>
         </div>
+        <p className="mt-4 text-sm text-muted">
+          Simple à utiliser, même sans connaissances en gestion financière.
+        </p>
       </section>
 
       {/* Aperçu carte solde */}
       <section className="mx-auto max-w-sm px-4 pb-12">
         <div className="gradient-primary rounded-3xl p-6 text-white shadow-xl shadow-primary/20">
-          <p className="text-sm text-white/80">Solde disponible</p>
+          <p className="text-sm text-white/80">Ce qu&apos;il vous reste</p>
           <p className="mt-1 text-4xl font-bold tracking-tight">85 500 F CFA</p>
           <div className="mt-5 flex gap-3 text-sm">
             <span className="flex-1 rounded-xl bg-white/15 px-3 py-2">
-              <span className="block text-white/70">Entrées</span>
+              <span className="block text-white/70">Reçu</span>
               <span className="font-semibold">+135 000</span>
             </span>
             <span className="flex-1 rounded-xl bg-white/15 px-3 py-2">
-              <span className="block text-white/70">Dépenses</span>
+              <span className="block text-white/70">Dépensé</span>
               <span className="font-semibold">-49 500</span>
             </span>
           </div>
@@ -161,9 +215,12 @@ export function Landing() {
       </section>
 
       {/* Fonctionnalités */}
-      <section className="mx-auto max-w-5xl px-4 pb-16">
+      <section
+        id="fonctionnalites"
+        className="mx-auto max-w-5xl scroll-mt-6 px-4 pb-16"
+      >
         <h2 className="mb-6 text-center text-2xl font-bold">
-          Tout ce qu&apos;il faut pour gérer votre budget
+          Tout ce qu&apos;il faut pour gérer votre argent
         </h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map((f) => (
@@ -181,13 +238,57 @@ export function Landing() {
         </div>
       </section>
 
+      {/* Comment ça marche ? */}
+      <section className="mx-auto max-w-5xl px-4 pb-16">
+        <h2 className="mb-8 text-center text-2xl font-bold">
+          Comment ça marche ?
+        </h2>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          {STEPS.map((s, i) => (
+            <div
+              key={s.title}
+              className="rounded-2xl border border-border bg-surface p-6 text-center shadow-sm"
+            >
+              <span className="gradient-primary mx-auto flex h-11 w-11 items-center justify-center rounded-full text-lg font-bold text-white">
+                {i + 1}
+              </span>
+              <h3 className="mt-4 font-bold">{s.title}</h3>
+              <p className="mt-1 text-sm text-muted">{s.text}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Pourquoi utiliser MonBudget ? */}
+      <section className="mx-auto max-w-5xl px-4 pb-16">
+        <h2 className="mb-8 text-center text-2xl font-bold">
+          Pourquoi utiliser MonBudget ?
+        </h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {WHY.map((w) => (
+            <div
+              key={w.title}
+              className="flex items-start gap-3 rounded-2xl border border-border bg-surface p-5 shadow-sm"
+            >
+              <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-success/15 text-success">
+                <Check className="h-4 w-4" />
+              </span>
+              <div>
+                <h3 className="font-semibold">{w.title}</h3>
+                <p className="mt-0.5 text-sm text-muted">{w.text}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* Tarifs */}
-      <section id="tarifs" className="mx-auto max-w-5xl px-4 pb-16 scroll-mt-6">
+      <section id="tarifs" className="mx-auto max-w-5xl scroll-mt-6 px-4 pb-16">
         <h2 className="mb-2 text-center text-2xl font-bold">Des tarifs simples</h2>
         <p className="mb-8 text-center text-muted">
-          Commence gratuitement, passe à un plan payant quand tu veux.
+          Deux formules, sans engagement. Changez ou arrêtez quand vous voulez.
         </p>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="mx-auto grid max-w-2xl grid-cols-1 gap-4 sm:grid-cols-2">
           {PRICING.map(({ key, features, highlight }) => {
             const plan = PLANS[key];
             return (
@@ -206,20 +307,16 @@ export function Landing() {
                   </span>
                 )}
                 <h3 className="flex items-center gap-1.5 font-bold">
-                  {key !== "GRATUIT" && <Crown className="h-4 w-4 text-primary" />}
+                  <Crown className="h-4 w-4 text-primary" />
                   {plan.label}
                 </h3>
                 <p className="mt-1 text-3xl font-extrabold">
                   {formatMoney(plan.monthlyCents, "XOF")}
-                  {key !== "GRATUIT" && (
-                    <span className="text-base font-medium text-muted"> / mois</span>
-                  )}
+                  <span className="text-base font-medium text-muted"> / mois</span>
                 </p>
-                {key !== "GRATUIT" && (
-                  <p className="text-xs text-muted">
-                    ou {formatMoney(plan.annualCents, "XOF")} / an
-                  </p>
-                )}
+                <p className="text-xs text-muted">
+                  ou {formatMoney(plan.annualCents, "XOF")} / an
+                </p>
                 <ul className="mt-4 flex-1 space-y-2 text-sm">
                   {features.map((t) => (
                     <li key={t} className="flex items-center gap-2">
@@ -228,15 +325,15 @@ export function Landing() {
                   ))}
                 </ul>
                 <Link
-                  href={key === "GRATUIT" ? "/register" : `/register?plan=${key}`}
+                  href={`/register?plan=${key}`}
                   className={
                     "mt-5 flex h-11 items-center justify-center gap-2 rounded-xl font-semibold transition active:scale-[0.99] " +
-                    (highlight || key === "PREMIUM"
+                    (highlight
                       ? "gradient-primary text-white"
                       : "border border-border hover:bg-surface-muted")
                   }
                 >
-                  {key === "GRATUIT" ? "Commencer gratuitement" : `Choisir ${plan.label}`}
+                  Choisir {plan.label}
                 </Link>
               </div>
             );
@@ -248,24 +345,54 @@ export function Landing() {
         </p>
       </section>
 
+      {/* FAQ */}
+      <section className="mx-auto max-w-3xl px-4 pb-16">
+        <h2 className="mb-8 text-center text-2xl font-bold">
+          Questions fréquentes
+        </h2>
+        <div className="space-y-3">
+          {FAQ.map((item) => (
+            <details
+              key={item.q}
+              className="group rounded-2xl border border-border bg-surface p-5 shadow-sm"
+            >
+              <summary className="flex cursor-pointer list-none items-center justify-between font-semibold">
+                {item.q}
+                <span className="ml-3 text-muted transition group-open:rotate-45">
+                  +
+                </span>
+              </summary>
+              <p className="mt-2 text-sm text-muted">{item.a}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+
       {/* CTA final */}
       <section className="mx-auto max-w-5xl px-4 pb-16">
         <div className="rounded-3xl border border-border bg-surface p-8 text-center">
-          <h2 className="text-2xl font-bold">Prêt à reprendre le contrôle ?</h2>
+          <h2 className="mx-auto max-w-xl text-2xl font-bold">
+            Et si vous commenciez à mieux gérer votre argent aujourd&apos;hui ?
+          </h2>
           <p className="mx-auto mt-2 max-w-md text-muted">
-            Créez votre compte en moins d&apos;une minute.
+            Prenez de bonnes habitudes financières et gardez une meilleure
+            visibilité sur vos dépenses.
           </p>
           <Link
             href="/register"
             className="gradient-primary mt-5 inline-flex h-12 items-center justify-center gap-2 rounded-2xl px-6 font-semibold text-white shadow-lg shadow-primary/25 transition active:scale-[0.99]"
           >
-            Créer mon compte <ArrowRight className="h-5 w-5" />
+            Commencer gratuitement <ArrowRight className="h-5 w-5" />
           </Link>
+          <p className="mt-3 text-xs text-muted">
+            Quelques étapes suffisent pour commencer.
+          </p>
         </div>
       </section>
 
       <footer className="border-t border-border py-6 text-center text-sm text-muted">
-        MonBudget — Suivez vos entrées et dépenses en quelques clics.
+        MonBudget — Sachez combien vous gagnez, combien vous dépensez et combien
+        il vous reste.
       </footer>
     </main>
   );

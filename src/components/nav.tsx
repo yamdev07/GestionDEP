@@ -7,10 +7,10 @@ import { cn } from "@/lib/utils";
 
 const LINKS = [
   { href: "/", label: "Accueil", icon: Home },
-  { href: "/journal", label: "Journal", icon: ScrollText },
-  { href: "/statistiques", label: "Statistiques", icon: BarChart3 },
-  { href: "/budgets", label: "Budgets", icon: Target },
-  { href: "/profil", label: "Profil", icon: User },
+  { href: "/journal", label: "Historique", icon: ScrollText },
+  { href: "/statistiques", label: "Analyse", icon: BarChart3 },
+  { href: "/budgets", label: "Mes limites", icon: Target },
+  { href: "/profil", label: "Mon profil", icon: User },
 ];
 
 function isActive(pathname: string, href: string) {

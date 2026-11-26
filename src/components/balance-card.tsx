@@ -8,10 +8,12 @@ export function BalanceCard({
   balanceCents,
   monthLabel,
   currency,
+  subtitle,
 }: {
   balanceCents: number;
   monthLabel: string;
   currency: string;
+  subtitle?: string;
 }) {
   const [hidden, setHidden] = useState(false);
 
@@ -24,7 +26,7 @@ export function BalanceCard({
       <div className="relative flex items-start justify-between">
         <div>
           <div className="flex items-center gap-2 text-sm font-medium text-white/80">
-            Solde disponible
+            Argent disponible
             <button
               type="button"
               onClick={() => setHidden((h) => !h)}
@@ -42,6 +44,10 @@ export function BalanceCard({
           <p className="mt-1.5 text-4xl font-extrabold tracking-tight">
             {hidden ? "••• •••" : formatMoney(balanceCents, currency)}
           </p>
+
+          {subtitle && (
+            <p className="mt-1 text-xs text-white/70">{subtitle}</p>
+          )}
 
           <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-medium capitalize">
             <CalendarDays className="h-3.5 w-3.5" />

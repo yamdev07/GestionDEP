@@ -15,11 +15,11 @@ import { cn, formatMoney } from "@/lib/utils";
 import { toTransactionView } from "@/lib/views";
 
 const CHIPS: { key: PeriodKey; label: string }[] = [
-  { key: "mois", label: "Ce mois" },
-  { key: "mois-dernier", label: "Mois dernier" },
-  { key: "30j", label: "30 jours" },
+  { key: "mois", label: "Ce mois-ci" },
+  { key: "mois-dernier", label: "Mois précédent" },
+  { key: "30j", label: "30 derniers jours" },
   { key: "annee", label: "Cette année" },
-  { key: "perso", label: "Personnalisée" },
+  { key: "perso", label: "Choisir une période" },
 ];
 
 export default async function JournalPage({
@@ -45,7 +45,7 @@ export default async function JournalPage({
     return (
       <AppShell>
         <div className="space-y-5">
-          <h1 className="text-2xl font-bold">Journal des dépenses</h1>
+          <h1 className="text-2xl font-bold">Historique de mes opérations</h1>
           <PremiumGate
             title="Fonction des plans payants"
             description="Le Journal te montre précisément où part ton argent sur la période de ton choix, avec le détail jour par jour. Disponible dès le plan Essentiel."
@@ -108,10 +108,20 @@ export default async function JournalPage({
       <div className="space-y-5">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold">Journal des dépenses</h1>
+            <h1 className="text-2xl font-bold">Historique de mes opérations</h1>
             <p className="text-sm text-muted">
-              {period.label} · du {new Date(period.from).toLocaleDateString("fr-FR")} au{" "}
-              {new Date(period.to).toLocaleDateString("fr-FR")}
+              Période : du{" "}
+              {new Date(period.from).toLocaleDateString("fr-FR", {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })}{" "}
+              au{" "}
+              {new Date(period.to).toLocaleDateString("fr-FR", {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })}
             </p>
           </div>
           <div className="flex gap-2 print:hidden">
@@ -120,7 +130,7 @@ export default async function JournalPage({
                 href={exportHref}
                 className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-border px-4 text-sm font-medium text-foreground transition hover:bg-surface-muted"
               >
-                <Download className="h-4 w-4" /> CSV
+                <Download className="h-4 w-4" /> Télécharger le fichier Excel (CSV)
               </a>
             ) : (
               <Link
@@ -128,10 +138,10 @@ export default async function JournalPage({
                 title="Export réservé au plan Premium"
                 className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-border px-4 text-sm font-medium text-muted transition hover:bg-surface-muted"
               >
-                <Lock className="h-4 w-4" /> CSV (Premium)
+                <Lock className="h-4 w-4" /> Fichier Excel (Premium)
               </Link>
             )}
-            <PrintButton />
+            <PrintButton label="Imprimer mon historique" />
           </div>
         </div>
 
@@ -168,29 +178,31 @@ export default async function JournalPage({
         >
           <input type="hidden" name="p" value="perso" />
           <div>
-            <Label htmlFor="from">Du</Label>
+            <Label htmlFor="from">Date de début</Label>
             <Input id="from" name="from" type="date" defaultValue={period.from} className="w-auto" />
           </div>
           <div>
-            <Label htmlFor="to">Au</Label>
+            <Label htmlFor="to">Date de fin</Label>
             <Input id="to" name="to" type="date" defaultValue={period.to} className="w-auto" />
           </div>
           <Button type="submit" variant="outline">
-            Appliquer
+            Afficher les résultats
           </Button>
         </form>
 
         {/* Résumé */}
         <div className="grid grid-cols-3 gap-3">
-          <Stat label="Total dépensé" value={formatMoney(total, currency)} tone="danger" />
-          <Stat label="Opérations" value={String(count)} tone="primary" />
-          <Stat label="Moyenne / jour" value={formatMoney(avgPerDay, currency)} tone="primary" />
+          <Stat label="Total des dépenses" value={formatMoney(total, currency)} tone="danger" />
+          <Stat label="Nombre d'opérations" value={String(count)} tone="primary" />
+          <Stat label="Dépense moyenne par jour" value={formatMoney(avgPerDay, currency)} tone="primary" />
         </div>
 
         {/* Répartition par catégorie */}
         {byCategory.length > 0 && (
           <Card>
-            <h2 className="mb-4 text-base font-bold">Où est parti l&apos;argent</h2>
+            <h2 className="mb-4 text-base font-bold">
+              Dans quoi ai-je dépensé mon argent ?
+            </h2>
             <ul className="space-y-3">
               {byCategory.map((c) => {
                 const pct = total > 0 ? Math.round((c.value / total) * 100) : 0;
