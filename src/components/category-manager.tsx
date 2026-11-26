@@ -121,19 +121,25 @@ function CategoryItem({ cat, currency }: { cat: CatView; currency: string }) {
 
   return (
     <li className={`flex items-center gap-3 py-3 ${pending ? "opacity-40" : ""}`}>
-      <CategoryIcon
-        icon={cat.icon}
-        color={cat.color}
-        className="h-10 w-10 shrink-0 rounded-xl"
-        size={18}
-      />
-      <div className="min-w-0 flex-1">
-        <p className="truncate font-medium">{cat.name}</p>
-        <p className="text-xs text-muted">
-          {cat.count} dépense{cat.count > 1 ? "s" : ""} ·{" "}
-          {formatMoney(cat.totalCents, currency)}
-        </p>
-      </div>
+      <Link
+        href={`/categories/${cat.id}`}
+        className="flex min-w-0 flex-1 items-center gap-3 rounded-xl transition hover:opacity-80"
+        title="Voir le détail des dépenses"
+      >
+        <CategoryIcon
+          icon={cat.icon}
+          color={cat.color}
+          className="h-10 w-10 shrink-0 rounded-xl"
+          size={18}
+        />
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-medium">{cat.name}</p>
+          <p className="text-xs text-muted">
+            {cat.count} dépense{cat.count > 1 ? "s" : ""} ·{" "}
+            {formatMoney(cat.totalCents, currency)}
+          </p>
+        </div>
+      </Link>
       <Link
         href={`/categories/${cat.id}/saisie`}
         title="Saisir des dépenses passées"
