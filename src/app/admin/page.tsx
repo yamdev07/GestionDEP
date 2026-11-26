@@ -7,6 +7,7 @@ import { effectivePlan } from "@/lib/subscription";
 import { SAAS_LAUNCH, PLANS, planRank } from "@/lib/plans";
 import { AppShell } from "@/components/app-shell";
 import { AdminUsers, type AdminUserRow } from "@/components/admin-users";
+import { SignupsChart, RevenueChart, PlanDonut } from "@/components/admin-charts";
 import { Card } from "@/components/ui";
 import { formatMoney } from "@/lib/utils";
 
@@ -17,7 +18,7 @@ export default async function AdminPage() {
 
   const adminEmail = getAdminEmail();
 
-  const [users, grouped, subs, paid] = await Promise.all([
+  const [users, grouped, subs, paid, paymentsList] = await Promise.all([
     prisma.user.findMany({
       orderBy: { createdAt: "asc" },
       select: {
@@ -40,6 +41,11 @@ export default async function AdminPage() {
       where: { status: "APPROVED" },
       _sum: { amountCents: true },
     }),
+    prisma.payment.findMany({
+      where: { status: "APPROVED" },
+      select: { amountCents: true, createdAt: true },
+      orderBy: { createdAt: "asc" },
+    }),
   ]);
 
   const sums = new Map<string, { income: number; expense: number }>();
@@ -58,16 +64,11 @@ export default async function AdminPage() {
     subsByUser.set(s.userId, list);
   }
 
-  let mrr = 0;
   const rows: AdminUserRow[] = users.map((u) => {
     const s = sums.get(u.id) ?? { income: 0, expense: 0 };
     const grandfathered = u.createdAt.getTime() < SAAS_LAUNCH.getTime();
     const plan = effectivePlan(u);
     const rank = planRank(plan);
-    // MRR : seuls les payants (hors offerts) comptent.
-    if (rank >= 1 && !grandfathered) {
-      mrr += PLANS[plan as keyof typeof PLANS]?.monthlyCents ?? 0;
-    }
     return {
       id: u.id,
       name: u.name,
@@ -99,6 +100,53 @@ export default async function AdminPage() {
   const refCurrency = rows[0]?.currency ?? "XOF";
   const payantsCount = rows.filter((r) => r.rank >= 1 && !r.grandfathered).length;
   const totalBilled = paid._sum.amountCents ?? 0;
+  // MRR : seuls les payants (hors offerts) comptent.
+  const mrr = rows.reduce(
+    (sum, r) =>
+      r.rank >= 1 && !r.grandfathered
+        ? sum + (PLANS[r.plan as keyof typeof PLANS]?.monthlyCents ?? 0)
+        : sum,
+    0,
+  );
+
+  // --- Données des graphiques : 12 derniers mois ---
+  const chartNow = new Date();
+  const monthKey = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  const monthBuckets: { key: string; label: string }[] = [];
+  for (let i = 11; i >= 0; i -= 1) {
+    const d = new Date(chartNow.getFullYear(), chartNow.getMonth() - i, 1);
+    monthBuckets.push({
+      key: monthKey(d),
+      label: d.toLocaleDateString("fr-FR", { month: "short" }),
+    });
+  }
+  const bucketIndex = new Map(monthBuckets.map((m, i) => [m.key, i]));
+
+  const signups = monthBuckets.map((m) => ({ label: m.label, count: 0 }));
+  for (const u of users) {
+    const i = bucketIndex.get(monthKey(u.createdAt));
+    if (i !== undefined) signups[i].count += 1;
+  }
+
+  const revenue = monthBuckets.map((m) => ({ label: m.label, cents: 0 }));
+  for (const p of paymentsList) {
+    const i = bucketIndex.get(monthKey(p.createdAt));
+    if (i !== undefined) revenue[i].cents += p.amountCents;
+  }
+
+  // Répartition par plan effectif (palette validée CVD : bleu / amber / rose).
+  const planCounts = { GRATUIT: 0, ESSENTIEL: 0, PREMIUM: 0 };
+  for (const r of rows) {
+    if (r.plan === "ESSENTIEL") planCounts.ESSENTIEL += 1;
+    else if (r.plan === "PREMIUM") planCounts.PREMIUM += 1;
+    else planCounts.GRATUIT += 1;
+  }
+  const planSlices = [
+    { name: "Gratuit", value: planCounts.GRATUIT, color: "#3b82f6" },
+    { name: "Essentiel", value: planCounts.ESSENTIEL, color: "#d97706" },
+    { name: "Premium", value: planCounts.PREMIUM, color: "#db2777" },
+  ].filter((s) => s.value > 0);
 
   return (
     <AppShell>
@@ -113,6 +161,28 @@ export default async function AdminPage() {
           <MiniStat icon={<Crown className="h-4 w-4" />} label="Payants" value={String(payantsCount)} tone="primary" />
           <MiniStat icon={<Banknote className="h-4 w-4" />} label="MRR (est.)" value={formatMoney(mrr, refCurrency)} tone="success" />
           <MiniStat icon={<Banknote className="h-4 w-4" />} label="Encaissé (FedaPay)" value={formatMoney(totalBilled, refCurrency)} tone="success" />
+        </div>
+
+        {/* Graphiques */}
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <Card>
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">
+              Inscriptions (12 mois)
+            </h2>
+            <SignupsChart data={signups} />
+          </Card>
+          <Card>
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">
+              Encaissements (12 mois)
+            </h2>
+            <RevenueChart data={revenue} currency={refCurrency} />
+          </Card>
+          <Card className="lg:col-span-2">
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">
+              Répartition des comptes par plan
+            </h2>
+            <PlanDonut data={planSlices} />
+          </Card>
         </div>
 
         <AdminUsers rows={rows} />
