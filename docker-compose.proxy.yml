@@ -38,6 +38,10 @@ services:
       FEDAPAY_SECRET_KEY: ${FEDAPAY_SECRET_KEY:-}
       FEDAPAY_ENVIRONMENT: ${FEDAPAY_ENVIRONMENT:-sandbox}
       FEDAPAY_WEBHOOK_SECRET: ${FEDAPAY_WEBHOOK_SECRET:-}
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:admin@example.com}
+      CRON_SECRET: ${CRON_SECRET:-}
       NODE_ENV: production
     # Exposé UNIQUEMENT sur la boucle locale : seul le proxy du serveur y accède.
     # Port hôte réglable via APP_PORT (.env) si 3000 est déjà pris.
