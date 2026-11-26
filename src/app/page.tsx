@@ -123,6 +123,11 @@ export default async function DashboardPage() {
     .filter((t) => t.type === "EXPENSE")
     .reduce((s, t) => s + t.amountCents, 0);
   const balanceCents = incomeCents - expenseCents;
+  // Argent disponible = total restant sur l'ensemble des comptes.
+  const totalAvailableCents = accountRows.reduce(
+    (s, a) => s + a.balanceCents,
+    0,
+  );
 
   // Solde prévisionnel (Premium) : récurrences à venir d'ici la fin du mois.
   const upcoming = canForecast(status.plan)
@@ -147,9 +152,10 @@ export default async function DashboardPage() {
     <AppShell>
       <div className="space-y-5">
         <BalanceCard
-          balanceCents={balanceCents}
+          balanceCents={totalAvailableCents}
           monthLabel={monthLabel}
           currency={currency}
+          subtitle="Montant restant sur l'ensemble de vos comptes"
         />
 
         <ForecastCard
@@ -175,28 +181,30 @@ export default async function DashboardPage() {
         {/* Revenus / Dépenses */}
         <div className="grid grid-cols-2 gap-3">
           <SummaryCard
-            label="Entrées"
+            label="Argent reçu ce mois"
             value={formatMoney(incomeCents, currency)}
             tone="success"
             icon={<ArrowUpRight className="h-5 w-5" />}
+            hint="Total de vos revenus depuis le début du mois"
           />
           <SummaryCard
-            label="Dépenses"
+            label="Argent dépensé ce mois"
             value={formatMoney(expenseCents, currency)}
             tone="danger"
             icon={<ArrowDownRight className="h-5 w-5" />}
+            hint="Total de vos dépenses depuis le début du mois"
           />
         </div>
 
         {/* Mes comptes */}
         <Card>
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-base font-bold">Mes comptes</h2>
+            <h2 className="text-base font-bold">Où se trouve mon argent ?</h2>
             <Link
               href="/comptes"
               className="flex items-center text-sm font-medium text-primary hover:underline"
             >
-              Gérer <ChevronRight className="h-4 w-4" />
+              Voir mes comptes <ChevronRight className="h-4 w-4" />
             </Link>
           </div>
           <div className="flex gap-3 overflow-x-auto pb-1">
@@ -231,13 +239,15 @@ export default async function DashboardPage() {
               <PiggyBank className="h-5 w-5" />
             </span>
             <div className="min-w-0 flex-1">
-              <p className="text-sm text-muted">Épargne</p>
+              <p className="text-sm text-muted">Mon argent mis de côté</p>
               <p className="text-lg font-bold tabular-nums">
-                {formatMoney(savedCents, currency)}
+                {formatMoney(savedCents, currency)} économisé
               </p>
             </div>
             <span className="shrink-0 text-xs text-muted">
-              {goalCount} objectif{goalCount > 1 ? "s" : ""}
+              {goalCount === 0
+                ? "Objectif d'épargne à définir"
+                : `${goalCount} objectif${goalCount > 1 ? "s" : ""}`}
             </span>
             <ChevronRight className="h-5 w-5 shrink-0 text-muted" />
           </Card>
@@ -245,7 +255,9 @@ export default async function DashboardPage() {
 
         {/* Répartition */}
         <Card>
-          <h2 className="mb-4 text-base font-bold">Répartition des dépenses</h2>
+          <h2 className="mb-4 text-base font-bold">
+            Dans quoi ai-je dépensé mon argent ?
+          </h2>
           <CategoryChart data={chartData} currency={currency} />
         </Card>
 
@@ -290,11 +302,13 @@ function SummaryCard({
   value,
   tone,
   icon,
+  hint,
 }: {
   label: string;
   value: string;
   tone: "success" | "danger";
   icon: React.ReactNode;
+  hint?: string;
 }) {
   const color = tone === "success" ? "var(--success)" : "var(--danger)";
   return (
@@ -310,6 +324,7 @@ function SummaryCard({
       </div>
       <p className="text-sm text-muted">{label}</p>
       <p className="mt-0.5 text-lg font-bold tabular-nums">{value}</p>
+      {hint && <p className="mt-0.5 text-xs text-muted">{hint}</p>}
     </Card>
   );
 }

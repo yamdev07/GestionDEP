@@ -8,15 +8,17 @@ import type { BudgetAlert } from "@/lib/budget-alerts";
 export function BudgetAlerts({
   alerts,
   currency,
+  title = "Attention à vos dépenses",
 }: {
   alerts: BudgetAlert[];
   currency: string;
+  title?: string;
 }) {
   if (alerts.length === 0) return null;
   return (
     <Card>
       <h2 className="mb-3 flex items-center gap-2 text-base font-bold">
-        <Bell className="h-5 w-5 text-primary" /> Alertes de budget
+        <Bell className="h-5 w-5 text-primary" /> {title}
       </h2>
       <ul className="space-y-3">
         {alerts.map((a) => (
@@ -34,7 +36,11 @@ export function BudgetAlerts({
                   className="shrink-0 font-semibold tabular-nums"
                   style={{ color: a.over ? "var(--danger)" : "#f59e0b" }}
                 >
-                  {a.over ? "Dépassé" : "Proche"} · {a.pct}%
+                  {a.over
+                    ? a.spentCents > a.budgetCents
+                      ? `Budget dépassé de ${formatMoney(a.spentCents - a.budgetCents, currency)}`
+                      : "Limite atteinte"
+                    : `Proche de la limite · ${a.pct}%`}
                 </span>
               </div>
               <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-surface-muted">

@@ -64,7 +64,7 @@ export async function registerUser(
       email,
       passwordHash,
       categories: { create: DEFAULT_CATEGORIES },
-      accounts: { create: [{ name: "Espèces", type: "CASH", color: "#6d28d9" }] },
+      accounts: { create: [{ name: "Argent liquide", type: "CASH", color: "#6d28d9" }] },
     },
   });
 

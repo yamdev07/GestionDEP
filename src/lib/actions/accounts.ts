@@ -96,7 +96,7 @@ export async function ensureDefaultAccount(userId: string): Promise<void> {
   if (count > 0) return;
 
   const account = await prisma.account.create({
-    data: { userId, name: "Espèces", type: "CASH", color: "#6d28d9" },
+    data: { userId, name: "Argent liquide", type: "CASH", color: "#6d28d9" },
   });
 
   await prisma.transaction.updateMany({
